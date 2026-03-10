@@ -1,0 +1,37 @@
+name: Requisito Funcional (RF)
+description: Feature pedida pelo professor ou feature do VitaSync
+title: '[RF] '
+labels: ['type: RF']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descricao
+      description: O que precisa ser implementado?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de Aceite
+      description: Como saber que esta pronto?
+      placeholder: |
+        - [ ] Criterio 1
+        - [ ] Criterio 2
+    validations:
+      required: true
+  - type: input
+    id: sensor
+    attributes:
+      label: Sensor de Hardware
+      placeholder: 'acelerometro / GPS / camera / biometria / luz / nenhum'
+  - type: input
+    id: hours
+    attributes:
+      label: Estimativa de Horas
+      placeholder: '8'
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notas Tecnicas
+      description: Bibliotecas, armadilhas conhecidas, links uteis

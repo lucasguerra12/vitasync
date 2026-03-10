@@ -1,0 +1,18 @@
+name: Setup / Infra
+description: Configuracao de ambiente, dependencias, CI/CD
+title: '[SETUP] '
+labels: ['type: setup']
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Objetivo
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos
+      placeholder: |
+        - [ ] Passo 1
+        - [ ] Passo 2

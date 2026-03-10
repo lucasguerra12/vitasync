@@ -1,0 +1,30 @@
+name: Bug
+description: Algo nao esta funcionando como esperado
+title: '[BUG] '
+labels: ['type: bug', 'priority: alta']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: O que aconteceu?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que era esperado?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Como reproduzir
+      placeholder: |
+        1. Abrir a tela X
+        2. Tocar em Y
+        3. Ver o erro
+  - type: dropdown
+    id: device
+    attributes:
+      label: Dispositivo
+      options: ['Android fisico', 'iOS fisico', 'Android Emulator', 'iOS
