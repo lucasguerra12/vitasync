@@ -1,0 +1,11 @@
+name: Documentacao
+description: README, Wiki, comentarios de codigo
+title: '[DOCS] '
+labels: ['type: docs']
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: O que precisa ser documentado
+    validations:
+      required: false
