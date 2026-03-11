@@ -1,0 +1,13 @@
+name: Deploy Backend
+on:
+  push:
+    branches: [main]
+    paths: ['apps/backend/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Railway
+        run: echo "Deploy configurado quando o backend estiver pronto"
