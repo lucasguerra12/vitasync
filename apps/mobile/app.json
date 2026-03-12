@@ -1,51 +1,52 @@
 {
-  "expo": {
-    "name": "VitaSync",
-    "slug": "vitasync",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0F172A"
-    },
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.lucasguerra.vitasync"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0F172A"
-      },
-      "package": "com.lucasguerra.vitasync",
-      "permissions": [
-        "ACTIVITY_RECOGNITION",
-        "FOREGROUND_SERVICE",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "CAMERA",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-camera",
-      "expo-local-authentication",
-      "expo-location",
-      "expo-notifications",
-      "expo-keep-awake"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "seu-project-id-aqui"
-      }
-    }
-  }
+    "expo":  {
+                 "name":  "VitaSync",
+                 "slug":  "vitasync",
+                 "version":  "1.0.0",
+                 "orientation":  "portrait",
+                 "icon":  "./assets/icon.png",
+                 "userInterfaceStyle":  "automatic",
+                 "splash":  {
+                                "image":  "./assets/splash-icon.png",
+                                "resizeMode":  "contain",
+                                "backgroundColor":  "#0F172A"
+                            },
+                 "ios":  {
+                             "supportsTablet":  false,
+                             "bundleIdentifier":  "com.lucasguerra.vitasync"
+                         },
+                 "android":  {
+                                 "adaptiveIcon": {
+                                                        "foregroundImage": "./assets/android-icon-foreground.png",
+                                                        "backgroundImage": "./assets/android-icon-background.png",
+                                                        "monochromeImage": "./assets/android-icon-monochrome.png",
+                                                        "backgroundColor": "#0F172A"
+                                                      },
+                                 "package":  "com.lucasguerra.vitasync",
+                                 "permissions":  [
+                                                     "ACTIVITY_RECOGNITION",
+                                                     "FOREGROUND_SERVICE",
+                                                     "ACCESS_FINE_LOCATION",
+                                                     "ACCESS_COARSE_LOCATION",
+                                                     "ACCESS_BACKGROUND_LOCATION",
+                                                     "CAMERA",
+                                                     "USE_BIOMETRIC",
+                                                     "USE_FINGERPRINT"
+                                                 ]
+                             },
+                 "web":  {
+                             "favicon":  "./assets/favicon.png"
+                         },
+                 "plugins":  [
+                                 "expo-camera",
+                                 "expo-local-authentication",
+                                 "expo-location",
+                                 "expo-notifications"
+                             ],
+                 "extra":  {
+                               "eas":  {
+                                           "projectId":  "seu-project-id-aqui"
+                                       }
+                           }
+             }
 }
