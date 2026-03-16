@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useAppSelector } from '../store/hooks';
 import MainTabs from './MainTabs';
 import OnboardingStack from './OnboardingStack';
+import { Colors } from '../constants';
 
 const Stack = createStackNavigator();
 
