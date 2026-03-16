@@ -1,8 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
+import profileReducer from './slices/profileSlice';
+import themeReducer from './slices/themeSlice';
 
 export const store = configureStore({
   reducer: {
-    // slices serão adicionados aqui
+    auth: authReducer,
+    profile: profileReducer,
+    theme: themeReducer,
   },
 });
 
