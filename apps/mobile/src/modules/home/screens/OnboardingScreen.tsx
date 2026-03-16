@@ -7,35 +7,35 @@ const { width } = Dimensions.get('window');
 
 const SLIDES = [
   {
-    tag: 'WELCOME TO VITASYNC',
-    title: 'Your body tells a story',
-    subtitle: 'Track how food, movement, sleep and mood connect to how you actually feel every day.',
+    tag: 'BEM-VINDO AO VITASYNC',
+    title: 'Seu corpo conta uma história',
+    subtitle: 'Acompanhe como alimentação, movimento, sono e humor se conectam ao que você sente todos os dias.',
     tagColor: Colors.home,
-    button: "Let's go",
+    button: "Vamos lá!",
     image: require('../../../../assets/images/onboarding_1.png'),
   },
   {
-    tag: '5 MODULES',
-    title: 'Everything in one place',
-    subtitle: 'NutriLens, FitTrack, MindZen, HealthPact and your daily Dashboard — all connected, all learning from each other.',
+    tag: '5 MÓDULOS',
+    title: 'Tudo em um só lugar',
+    subtitle: 'NutriLens, FitTrack, MindZen, HealthPact e seu Painel Diário — todos conectados, todos aprendendo um com o outro.',
     tagColor: Colors.home,
-    button: 'Next',
+    button: 'Próximo',
     image: require('../../../../assets/images/onboarding_2.png'),
   },
   {
     tag: 'HEALTHPACT',
-    title: 'Better together',
-    subtitle: "Join challenges, share progress, and stay accountable with friends. Because health is better when it's shared.",
+    title: 'Juntos é melhor',
+    subtitle: "Participe de desafios, compartilhe seu progresso e mantenha o foco com amigos. Porque saúde é melhor quando é compartilhada.",
     tagColor: Colors.healthpact,
-    button: 'Get Started',
+    button: 'Começar',
     image: require('../../../../assets/images/onboarding_3.png'),
   },
   {
     tag: 'AI INSIGHTS',
-    title: 'Connect the dots you never could',
-    subtitle: 'VitaSync finds patterns between your pain, food, sleep, mood and weather. Real correlations, in plain language.',
+    title: 'Conecte os pontos que você nunca conseguiu',
+    subtitle: 'O VitaSync encontra padrões entre sua dor, alimentação, sono, humor e clima. Correlações reais, em linguagem simples.',
     tagColor: Colors.mindzen,
-    button: 'Set up my profile',
+    button: 'Configurar meu perfil',
     image: require('../../../../assets/images/onboarding_4.png'),
   },
 ];
@@ -66,7 +66,7 @@ export default function OnboardingScreen({ onFinish }: Props) {
 
       {/* Botão Skip */}
       <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>Pular</Text>
       </TouchableOpacity>
 
       {/* Área da ilustração */}
@@ -111,7 +111,7 @@ export default function OnboardingScreen({ onFinish }: Props) {
         {/* Botão Voltar */}
         {currentIndex > 0 && (
           <TouchableOpacity style={styles.backButton} onPress={() => setCurrentIndex(currentIndex - 1)}>
-            <Text style={styles.backText}>Back</Text>
+            <Text style={styles.backText}>Voltar</Text>
           </TouchableOpacity>
         )}
 
