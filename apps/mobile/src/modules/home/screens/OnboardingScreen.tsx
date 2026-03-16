@@ -35,7 +35,7 @@ const SLIDES = [
     title: 'Conecte os pontos que você nunca conseguiu',
     subtitle: 'O VitaSync encontra padrões entre sua dor, alimentação, sono, humor e clima. Correlações reais, em linguagem simples.',
     tagColor: Colors.mindzen,
-    button: 'Configurar meu perfil',
+    button: 'Vamos lá!',
     image: require('../../../../assets/images/onboarding_4.png'),
   },
 ];
