@@ -7,7 +7,6 @@ import { Colors, Typography } from '../../../constants';
 import { useAppDispatch } from '../../../store/hooks';
 import { setProfile } from '../../../store/slices/profileSlice';
 
-// ── Opções dos campos ──
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'];
 
 const ACTIVITY_OPTIONS = [
@@ -23,7 +22,7 @@ const GOAL_OPTIONS = [
   { value: 'reduce_stress', label: 'Reduzir estresse', emoji: '🧘', color: Colors.mindzen },
 ];
 
-const CONDITIONS = ['Fibromialgia', 'Enxaqueca', 'Endometriose', 'Tonturas', 'Dores Crônicas', 'Outras'];
+const CONDITIONS = ['Fibromialgia', 'Enxaqueca', 'Endometriose', 'SII', 'SOP', 'Fadiga Crônica', 'Outro'];
 
 interface Props {
   onContinue: () => void;
@@ -33,7 +32,13 @@ interface Props {
 export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
   const dispatch = useAppDispatch();
 
-  // ── Estado do formulário ──
+  // ── Credenciais ──
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ── Perfil ──
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [weight, setWeight] = useState('');
@@ -53,6 +58,10 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
   };
 
   const handleContinue = () => {
+    if (password !== confirmPassword) {
+      alert('As senhas não coincidem.');
+      return;
+    }
     dispatch(setProfile({
       name,
       birthDate,
@@ -74,8 +83,8 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Nos conte sobre você</Text>
-          <Text style={styles.headerStep}>Passo 1 de 3</Text>
+          <Text style={styles.headerTitle}>Criar sua conta</Text>
+          <Text style={styles.headerStep}>Passo 1 de 2</Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -84,29 +93,88 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       <View style={styles.progressBar}>
         <View style={styles.progressFill} />
       </View>
-      <Text style={styles.progressText}>33% concluído</Text>
+      <Text style={styles.progressText}>50% concluído</Text>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* The basics */}
+        {/* Credenciais de acesso */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso à conta</Text>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>E-mail</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="nome@exemplo.com"
+              placeholderTextColor={Colors.dark.textSecondary}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Senha</Text>
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.inputFlex}
+                placeholder="mínimo 8 caracteres"
+                placeholderTextColor={Colors.dark.textSecondary}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Confirmar senha</Text>
+            <TextInput
+              style={[
+                styles.input,
+                confirmPassword.length > 0 && confirmPassword !== password && styles.inputError
+              ]}
+              placeholder="repita a senha"
+              placeholderTextColor={Colors.dark.textSecondary}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showPassword}
+            />
+            {confirmPassword.length > 0 && confirmPassword !== password && (
+              <Text style={styles.errorText}>As senhas não coincidem</Text>
+            )}
+          </View>
+        </View>
+
+        {/* O básico */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>O básico</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Nome Completo"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Nome completo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Seu nome"
+              placeholderTextColor={Colors.dark.textSecondary}
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Data de nascimento (DD/MM/YYYY)"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={birthDate}
-            onChangeText={setBirthDate}
-          />
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Data de nascimento (DD/MM/AAAA)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="01/01/2000"
+              placeholderTextColor={Colors.dark.textSecondary}
+              value={birthDate}
+              onChangeText={setBirthDate}
+            />
+          </View>
 
           <View style={styles.row}>
             <View style={styles.halfInput}>
@@ -134,9 +202,10 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           </View>
         </View>
 
-        {/* About you — Sex */}
+        {/* Sobre você */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre você</Text>
+
           <View style={styles.pills}>
             {SEX_OPTIONS.map(option => (
               <TouchableOpacity
@@ -151,8 +220,8 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
             ))}
           </View>
 
-          {/* Activity Level */}
           <View style={styles.gap} />
+
           {ACTIVITY_OPTIONS.map(option => (
             <TouchableOpacity
               key={option.value}
@@ -170,7 +239,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           ))}
         </View>
 
-        {/* Main Goal */}
+        {/* Seu principal objetivo */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seu principal objetivo</Text>
           {GOAL_OPTIONS.map(option => (
@@ -190,7 +259,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           ))}
         </View>
 
-        {/* Chronic Conditions */}
+        {/* Condições crônicas */}
         <View style={styles.section}>
           <View style={styles.conditionsHeader}>
             <Text style={styles.sectionTitle}>Você tem alguma condição crônica?</Text>
@@ -207,16 +276,10 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
               {CONDITIONS.map(condition => (
                 <TouchableOpacity
                   key={condition}
-                  style={[
-                    styles.chip,
-                    selectedConditions.includes(condition) && styles.chipActive
-                  ]}
+                  style={[styles.chip, selectedConditions.includes(condition) && styles.chipActive]}
                   onPress={() => toggleCondition(condition)}
                 >
-                  <Text style={[
-                    styles.chipText,
-                    selectedConditions.includes(condition) && styles.chipTextActive
-                  ]}>
+                  <Text style={[styles.chipText, selectedConditions.includes(condition) && styles.chipTextActive]}>
                     {condition}
                   </Text>
                 </TouchableOpacity>
@@ -231,7 +294,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       {/* Botão fixo no rodapé */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueText}>Continuar  →</Text>
+          <Text style={styles.continueText}>Continuar →</Text>
         </TouchableOpacity>
         <Text style={styles.footerNote}>Você pode atualizar isso depois</Text>
       </View>
@@ -286,7 +349,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: 3,
-    width: '33%',
+    width: '50%',
     backgroundColor: Colors.home,
     borderRadius: 2,
   },
@@ -313,6 +376,15 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     marginBottom: 16,
   },
+  inputWrapper: {
+    gap: 6,
+    marginBottom: 12,
+  },
+  inputLabel: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.dark.textSecondary,
+    fontFamily: Typography.fonts.body,
+  },
   input: {
     backgroundColor: Colors.dark.surface,
     borderRadius: 12,
@@ -323,13 +395,35 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontFamily: Typography.fonts.body,
     fontSize: Typography.sizes.base,
-    marginBottom: 12,
   },
-  inputLabel: {
-    fontSize: Typography.sizes.xs,
-    color: Colors.dark.textSecondary,
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    paddingHorizontal: 16,
+  },
+  inputFlex: {
+    flex: 1,
+    paddingVertical: 14,
+    color: Colors.dark.text,
     fontFamily: Typography.fonts.body,
-    marginBottom: 4,
+    fontSize: Typography.sizes.base,
+  },
+  inputError: {
+    borderColor: Colors.error,
+  },
+  errorText: {
+    fontSize: Typography.sizes.xs,
+    color: Colors.error,
+    fontFamily: Typography.fonts.body,
+    paddingLeft: 4,
+  },
+  eyeIcon: {
+    fontSize: 18,
+    paddingVertical: 16,
   },
   row: {
     flexDirection: 'row',
@@ -337,6 +431,7 @@ const styles = StyleSheet.create({
   },
   halfInput: {
     flex: 1,
+    gap: 6,
   },
   pills: {
     flexDirection: 'row',
