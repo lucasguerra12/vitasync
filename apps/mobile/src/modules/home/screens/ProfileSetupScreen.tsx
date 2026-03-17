@@ -1,11 +1,10 @@
-import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput, SafeAreaView
+import { View, Text, StyleSheet, ScrollView,TouchableOpacity, TextInput, SafeAreaView
 } from 'react-native';
 import { useState } from 'react';
 import { Colors, Typography } from '../../../constants';
 import { useAppDispatch } from '../../../store/hooks';
 import { setProfile } from '../../../store/slices/profileSlice';
+import { calcAge, calcDailyCalories } from '../../../utils';
 
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'];
 
@@ -62,6 +61,20 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       alert('As senhas não coincidem.');
       return;
     }
+
+    const age = birthDate ? calcAge(birthDate) : null;
+    
+    let dailyCalorieGoal = null
+    if (age && weight && height && sex && activityLevel) {
+      dailyCalorieGoal = calcDailyCalories(
+        sex as any,
+        parseFloat(weight),
+        parseFloat(height),
+        age,
+        activityLevel as any 
+      );
+    }
+    
     dispatch(setProfile({
       name,
       birthDate,
@@ -70,6 +83,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       sex: sex as any,
       activityLevel: activityLevel as any,
       mainGoal: mainGoal as any,
+      dailyCalorieGoal
     }));
     onContinue();
   };

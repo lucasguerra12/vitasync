@@ -9,19 +9,11 @@ import TodayLogRow from '../components/TodayLogRow';
 import InsightCard from '../components/InsightCard';
 import MeditationBanner from '../components/MeditationBanner';
 
-// dados temporarios ate conectar com WatermelonDB e Redux
 const MOCK_METRICS = [
   { label: 'Nutrição', value: 87, color: Colors.nutrilens },
   { label: 'Sono', value: 65, color: Colors.mindzen },
   { label: 'Movimento', value: 72, color: Colors.fittrack },
   { label: 'Hidratação', value: 60, color: Colors.info },
-];
-
-const MOCK_STATS = [
-  { label: 'Calorias', value: '1.842', target: '2.100', unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
-  { label: 'Passos', value: '7.234', target: '10.000', unit: '', color: Colors.fittrack, emoji: '👟' },
-  { label: 'Água', value: '1,4', target: '2,0', unit: 'L', color: Colors.info, emoji: '💧' },
-  { label: 'Freq. Card.', value: '72', target: '—', unit: 'bpm', color: Colors.error, emoji: '❤️' },
 ];
 
 const MOCK_LOG = [
@@ -33,6 +25,20 @@ const MOCK_LOG = [
 
 export default function DashboardScreen() {
   const profile = useAppSelector(state => state.profile);
+
+  const calorieTarget = profile.dailyCalorieGoal
+    ? profile.dailyCalorieGoal.toLocaleString('pt-BR')
+    : '2.000';
+
+  const waterTarget = (profile.dailyWaterGoalMl / 1000).toFixed(1).replace('.', ',');
+  const stepTarget = profile.dailyStepGoal.toLocaleString('pt-BR');
+
+  const MOCK_STATS = [
+    { label: 'Calorias', value: '1.842', target: calorieTarget, unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
+    { label: 'Passos', value: '7.234', target: stepTarget, unit: '', color: Colors.fittrack, emoji: '👟' },
+    { label: 'Água', value: '1,4', target: waterTarget, unit: 'L', color: Colors.info, emoji: '💧' },
+    { label: 'Freq. Card.', value: '72', target: '—', unit: 'bpm', color: Colors.error, emoji: '❤️' },
+  ];
 
   return (
     <View style={styles.container}>
