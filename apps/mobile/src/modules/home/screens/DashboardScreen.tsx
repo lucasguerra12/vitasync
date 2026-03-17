@@ -1,5 +1,5 @@
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Colors } from '../../../constants';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import { Colors , Typography } from '../../../constants';
 import { useAppSelector } from '../../../store/hooks';
 import DashboardHeader from '../components/DashboardHeader';
 import ScoreCard from '../components/ScoreCard';
@@ -8,6 +8,10 @@ import QuickStatsGrid from '../components/QuickStatsGrid';
 import TodayLogRow from '../components/TodayLogRow';
 import InsightCard from '../components/InsightCard';
 import MeditationBanner from '../components/MeditationBanner';
+
+interface Props {
+  onOpenIMC?:() => void
+}
 
 const MOCK_METRICS = [
   { label: 'Nutrição', value: 87, color: Colors.nutrilens },
@@ -23,7 +27,7 @@ const MOCK_LOG = [
   { emoji: '😊', label: 'Humor', value: '4/5' },
 ];
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ onOpenIMC }: Props) {
   const profile = useAppSelector(state => state.profile);
 
   const calorieTarget = profile.dailyCalorieGoal
@@ -60,6 +64,10 @@ export default function DashboardScreen() {
 
         <QuickStatsGrid stats={MOCK_STATS} />
 
+        <TouchableOpacity style={styles.imcButton} onPress={onOpenIMC}>
+          <Text style={styles.imcButtonText}>📊 Calcular meu IMC</Text>
+        </TouchableOpacity>
+
         <TodayLogRow
           items={MOCK_LOG}
           onSeeAll={() => {}}
@@ -84,5 +92,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,
+  },
+  imcButton: {
+    marginHorizontal: 24,
+    marginBottom: 12,
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    padding: 16,
+    alignItems: 'center',
+  },
+  imcButtonText: {
+    fontSize: Typography.sizes.base,
+    fontFamily: Typography.fonts.body,
+    fontWeight: Typography.weights.medium,
+    color: Colors.dark.text,
   },
 });

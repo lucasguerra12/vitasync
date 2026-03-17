@@ -1,22 +1,34 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Text } from 'react-native';
 import { Colors, Typography } from '../constants';
 import DashboardScreen from '../modules/home/screens/DashboardScreen';
+import IMCScreen from '../modules/home/screens/IMCScreen'
+import { useNavigation } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
+const HomeStack = createStackNavigator();
 
-// telas temporarias ate criarmos as telas reais
-function NutriLensScreen() {
-  return null;
+function NutriLensScreen() { return null; }
+function FitTrackScreen() { return null; }
+function MindZenScreen() { return null; }
+function HealthPactScreen() { return null; }
+
+function DashboardWrapper() {
+  const navigation = useNavigation<any>();
+  return <DashboardScreen onOpenIMC={() => navigation.navigate('IMC')} />;
 }
-function FitTrackScreen() {
-  return null;
-}
-function MindZenScreen() {
-  return null;
-}
-function HealthPactScreen() {
-  return null;
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Dashboard" component={DashboardWrapper} />
+      <HomeStack.Screen name="IMC" component={() => {
+        const navigation = useNavigation<any>();
+        return <IMCScreen onBack={() => navigation.goBack()} />;
+      }} />
+    </HomeStack.Navigator>
+  );
 }
 
 export default function MainTabs() {
@@ -49,7 +61,7 @@ export default function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={DashboardScreen} options={{ title: 'Início' }} />
+      <Tab.Screen name="Home" component={HomeStackNavigator} options={{ title: 'Início' }} />
       <Tab.Screen name="NutriLens" component={NutriLensScreen} options={{ title: 'NutriLens' }} />
       <Tab.Screen name="FitTrack" component={FitTrackScreen} options={{ title: 'FitTrack' }} />
       <Tab.Screen name="MindZen" component={MindZenScreen} options={{ title: 'MindZen' }} />
