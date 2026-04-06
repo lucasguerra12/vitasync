@@ -1,6 +1,7 @@
 import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
-import { Colors , Typography } from '../../../constants';
-import { useAppSelector } from '../../../store/hooks';
+import { Colors, Typography } from '../../../constants';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { updateSteps } from '../../../store/slices/stepsSlice';
 import DashboardHeader from '../components/DashboardHeader';
 import ScoreCard from '../components/ScoreCard';
 import MetricsBanner from '../components/MetricsBanner';
@@ -10,72 +11,72 @@ import InsightCard from '../components/InsightCard';
 import MeditationBanner from '../components/MeditationBanner';
 
 interface Props {
-  onOpenIMC?:() => void
+  onOpenIMC?: () => void;
 }
-
-const MOCK_METRICS = [
-  { label: 'Nutrição', value: 87, color: Colors.nutrilens },
-  { label: 'Sono', value: 65, color: Colors.mindzen },
-  { label: 'Movimento', value: 72, color: Colors.fittrack },
-  { label: 'Hidratação', value: 60, color: Colors.info },
-];
-
-const MOCK_LOG = [
-  { emoji: '🥗', label: 'Almoço', value: '487 kcal' },
-  { emoji: '🏃', label: 'Corrida', value: '5,2 km' },
-  { emoji: '💊', label: 'Vitamina D', value: 'Diário' },
-  { emoji: '😊', label: 'Humor', value: '4/5' },
-];
 
 export default function DashboardScreen({ onOpenIMC }: Props) {
   const profile = useAppSelector(state => state.profile);
   const todaySteps = useAppSelector(state => state.steps.todaySteps);
+  const dispatch = useAppDispatch();
 
-  const calorieTarget = profile.dailyCalorieGoal
-    ? profile.dailyCalorieGoal.toLocaleString('pt-BR')
-    : '2.000';
+  // Dados reais puxados do Redux (ou fallback padrão)
+  const calorieTarget = profile.dailyCalorieGoal || 2000;
+  const stepTarget = profile.dailyStepGoal || 10000;
+  const waterTarget = profile.dailyWaterGoalMl ? (profile.dailyWaterGoalMl / 1000) : 2.0;
 
-  const waterTarget = (profile.dailyWaterGoalMl / 1000).toFixed(1).replace('.', ',');
-  const stepTarget = profile.dailyStepGoal.toLocaleString('pt-BR');
-
-  const MOCK_STATS = [
-    { label: 'Calorias', value: '1.842', target: calorieTarget, unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
-    { label: 'Passos', value: todaySteps.toLocaleString('pt-BR'), target: stepTarget, unit: '', color: Colors.fittrack, emoji: '👟' },
-    { label: 'Água', value: '1,4', target: waterTarget, unit: 'L', color: Colors.info, emoji: '💧' },
-    { label: 'Freq. Card.', value: '72', target: '—', unit: 'bpm', color: Colors.error, emoji: '❤️' },
+  // Cards mantidos, porém zerados aguardando os dados reais dos sensores (Sprint 2)
+  const METRICS_ZEROED = [
+    { label: 'Nutrição', value: 0, color: Colors.nutrilens },
+    { label: 'Sono', value: 0, color: Colors.mindzen },
+    { label: 'Movimento', value: 0, color: Colors.fittrack },
+    { label: 'Hidratação', value: 0, color: Colors.info },
   ];
+
+  const STATS_REAL = [
+    { label: 'Calorias', value: '0', target: calorieTarget.toLocaleString('pt-BR'), unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
+    { label: 'Passos', value: todaySteps.toLocaleString('pt-BR'), target: stepTarget.toLocaleString('pt-BR'), unit: '', color: Colors.fittrack, emoji: '👟' },
+    { label: 'Água', value: '0', target: waterTarget.toLocaleString('pt-BR'), unit: 'L', color: Colors.info, emoji: '💧' },
+    { label: 'Freq. Card.', value: '--', target: '--', unit: 'bpm', color: Colors.error, emoji: '❤️' },
+  ];
+
+  const handleSimulateSteps = () => {
+    dispatch(updateSteps(todaySteps + 500));
+  };
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
 
         <DashboardHeader
-          userName={profile.name ?? 'Você'}
-          hasNotification={true}
+          userName={profile.name ?? 'Visitante'}
+          hasNotification={false}
           onNotificationPress={() => {}}
         />
 
-        <ScoreCard
-          score={78}
-          streakDays={14}
-          trend={4}
-        />
+        {/* Score zerado no início */}
+        <ScoreCard score={0} streakDays={0} trend={0} />
 
-        <MetricsBanner metrics={MOCK_METRICS} />
+        <MetricsBanner metrics={METRICS_ZEROED} />
 
-        <QuickStatsGrid stats={MOCK_STATS} />
+        <QuickStatsGrid stats={STATS_REAL} />
+
+        {__DEV__ && (
+          <TouchableOpacity style={styles.devButton} onPress={handleSimulateSteps}>
+            <Text style={styles.devButtonText}>🐛 DEV: Simular +500 Passos</Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity style={styles.imcButton} onPress={onOpenIMC}>
           <Text style={styles.imcButtonText}>📊 Calcular meu IMC</Text>
         </TouchableOpacity>
 
         <TodayLogRow
-          items={MOCK_LOG}
+          items={[]} // Lista vazia para mostrar que não há registros falsos
           onSeeAll={() => {}}
         />
 
         <InsightCard
-          insight="Sua dor nas costas é 2,3x maior quando a ingestão de magnésio está abaixo de 40% da sua meta diária."
+          insight="Sem dados suficientes. Continue usando o app para gerarmos insights de saúde."
           onViewMore={() => {}}
         />
 
@@ -110,4 +111,19 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.medium,
     color: Colors.dark.text,
   },
+  devButton: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: Colors.error,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ff0000',
+    borderStyle: 'dashed',
+  },
+  devButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  }
 });
