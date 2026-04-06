@@ -13,6 +13,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/dm-mono": "^0.4.2",
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/public-sans": "^0.4.2",
     "@nozbe/watermelondb": "^0.28.0",
     "@nozbe/with-observables": "^1.6.0",
     "@react-navigation/bottom-tabs": "^7.15.5",
@@ -36,8 +39,7 @@
     "react-native": "0.83.2",
     "react-native-gesture-handler": "^2.30.0",
     "react-native-maps": "1.26.20",
-    "react-native-pedometer": "^0.0.7",
-    "react-native-reanimated": "4.2.1",
+    "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
     "react-native-svg": "^15.15.3",
