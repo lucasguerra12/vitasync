@@ -29,6 +29,7 @@ const MOCK_LOG = [
 
 export default function DashboardScreen({ onOpenIMC }: Props) {
   const profile = useAppSelector(state => state.profile);
+  const todaySteps = useAppSelector(state => state.steps.todaySteps);
 
   const calorieTarget = profile.dailyCalorieGoal
     ? profile.dailyCalorieGoal.toLocaleString('pt-BR')
@@ -39,7 +40,7 @@ export default function DashboardScreen({ onOpenIMC }: Props) {
 
   const MOCK_STATS = [
     { label: 'Calorias', value: '1.842', target: calorieTarget, unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
-    { label: 'Passos', value: '7.234', target: stepTarget, unit: '', color: Colors.fittrack, emoji: '👟' },
+    { label: 'Passos', value: todaySteps.toLocaleString('pt-BR'), target: stepTarget, unit: '', color: Colors.fittrack, emoji: '👟' },
     { label: 'Água', value: '1,4', target: waterTarget, unit: 'L', color: Colors.info, emoji: '💧' },
     { label: 'Freq. Card.', value: '72', target: '—', unit: 'bpm', color: Colors.error, emoji: '❤️' },
   ];
