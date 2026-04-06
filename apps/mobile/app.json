@@ -13,6 +13,9 @@
     },
     "ios": {
       "supportsTablet": false,
+      "infoPlist":{
+        "NSMotionUsageDescription": "O VitaSync precisa do acelerômetro para contar seus passos em segundo plano."
+      },
       "bundleIdentifier": "com.lucasguerra.vitasync"
     },
     "android": {
@@ -26,6 +29,7 @@
       "permissions": [
         "ACTIVITY_RECOGNITION",
         "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_HEALTH",
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",

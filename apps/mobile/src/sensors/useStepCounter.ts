@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { Pedometer } from 'expo-sensors';
 import { useAppDispatch } from '../store/hooks';
 import { updateSteps, setStepsAvailable } from '../store/slices/stepsSlice';
@@ -10,14 +11,10 @@ export function useStepCounter() {
   useEffect(() => {
     let subscription: any;
 
-    const start = async () => {
+    const startIOS = async () => {
       const available = await Pedometer.isAvailableAsync();
       dispatch(setStepsAvailable(available));
-
-      if (!available) {
-        console.log('Pedômetro não disponível neste dispositivo');
-        return;
-      }
+      if (!available) return;
 
       subscription = Pedometer.watchStepCount(result => {
         setSteps(result.steps);
@@ -25,12 +22,19 @@ export function useStepCounter() {
       });
     };
 
-    start();
+    const startAndroid = async () => {
+      console.log('Iniciando serviço de passos em Background (Android).');
+      dispatch(setStepsAvailable(true)); 
+      // TODO (Sprint 2 / APK final): Plugar react-native-step-counter
+    };
+
+    if (Platform.OS === 'ios') startIOS();
+    else if (Platform.OS === 'android') startAndroid();
 
     return () => {
-      subscription?.remove();
+      if (Platform.OS === 'ios' && subscription) subscription.remove();
     };
-  }, []);
+  }, [dispatch]);
 
   return { steps };
 }
