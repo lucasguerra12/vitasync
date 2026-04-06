@@ -19,8 +19,10 @@ import {
 } from '@expo-google-fonts/dm-mono';
 import { View, ActivityIndicator } from 'react-native';
 import { Colors } from './src/constants';
+import { useLightSensor } from './src/sensors/useLightSensor';
 
-export default function App() {
+// Componente separado para usar os hooks dentro do Provider
+function AppContent() {
   const [fontsLoaded] = useFonts({
     PublicSans: PublicSans_400Regular,
     PublicSans_Medium: PublicSans_500Medium,
@@ -33,7 +35,9 @@ export default function App() {
     DMMono_Medium: DMMono_500Medium,
   });
 
-  // enquanto as fontes carregam mostra um loading
+  // ativa o sensor de luz automaticamente
+  useLightSensor();
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background }}>
@@ -42,9 +46,13 @@ export default function App() {
     );
   }
 
+  return <Navigation />;
+}
+
+export default function App() {
   return (
     <Provider store={store}>
-      <Navigation />
+      <AppContent />
     </Provider>
   );
 }
