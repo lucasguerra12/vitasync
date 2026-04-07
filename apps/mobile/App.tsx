@@ -10,6 +10,7 @@ import { Colors } from './src/constants';
 import { useLightSensor } from './src/sensors/useLightSensor';
 import { useStepCounter } from './src/sensors/useStepCounter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { InAppNotification } from './src/components/ui/InAppNotification';
 
 function AppContent() {
   const [fontsLoaded] = useFonts({
@@ -44,6 +45,7 @@ export default function App() {
       <Provider store={store}>
         <AppContent />
       </Provider>
+      <InAppNotification />
     </SafeAreaProvider>
   );
 }

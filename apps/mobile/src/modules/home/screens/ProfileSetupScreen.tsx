@@ -1,27 +1,51 @@
-import { View, Text, StyleSheet, ScrollView,TouchableOpacity, TextInput, SafeAreaView
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, SafeAreaView } from 'react-native';
 import { useState } from 'react';
 import { Colors, Typography } from '../../../constants';
 import { useAppDispatch } from '../../../store/hooks';
 import { setProfile } from '../../../store/slices/profileSlice';
 import { calcAge, calcDailyCalories } from '../../../utils';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'];
+const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
 
 const ACTIVITY_OPTIONS = [
   { value: 'sedentary', label: 'Sedentário', description: 'Pouco ou nenhum exercício' },
   { value: 'light', label: 'Leve', description: 'Exercício 1-3x por semana' },
   { value: 'moderate', label: 'Ativo', description: 'Exercício 3-5x por semana' },
   { value: 'very_active', label: 'Muito Ativo', description: 'Exercício 6-7x por semana' },
-];
+] as const;
 
 const GOAL_OPTIONS = [
   { value: 'lose_weight', label: 'Perder peso', emoji: '🏋️', color: Colors.fittrack },
   { value: 'gain_muscle', label: 'Ganhar músculo', emoji: '💪', color: Colors.info },
   { value: 'reduce_stress', label: 'Reduzir estresse', emoji: '🧘', color: Colors.mindzen },
-];
+] as const;
 
 const CONDITIONS = ['Fibromialgia', 'Enxaqueca', 'Endometriose', 'SII', 'SOP', 'Fadiga Crônica', 'Outro'];
+
+const setupFormSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
+  confirmPassword: z.string(),
+  name: z.string().min(2, "O nome é obrigatório"),
+  birthDate: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Use o formato DD/MM/AAAA"),
+  weight: z.string()
+    .min(1, "O peso é obrigatório")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Peso inválido"),
+  height: z.string()
+    .min(1, "A altura é obrigatória")
+    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Altura inválida"),
+  sex: z.string().min(1, "Selecione uma opção"),
+  activityLevel: z.string().min(1, "Selecione uma opção"),
+  mainGoal: z.string().min(1, "Selecione uma opção"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type SetupFormData = z.infer<typeof setupFormSchema>;
 
 interface Props {
   onContinue: () => void;
@@ -30,59 +54,53 @@ interface Props {
 
 export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
   const dispatch = useAppDispatch();
-
-  // ── Credenciais ──
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
-  // ── Perfil ──
-  const [name, setName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
-  const [sex, setSex] = useState<string | null>(null);
-  const [activityLevel, setActivityLevel] = useState<string | null>(null);
-  const [mainGoal, setMainGoal] = useState<string | null>(null);
   const [hasConditions, setHasConditions] = useState(false);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+const { control, handleSubmit, formState: { errors } } = useForm<SetupFormData>({
+    resolver: zodResolver(setupFormSchema),
+    defaultValues: {
+      email: '', 
+      password: '', 
+      confirmPassword: '', 
+      name: '', 
+      birthDate: '', 
+      weight: '', 
+      height: '',
+      sex: '',
+      activityLevel: '',
+      mainGoal: ''
+    }
+  });
 
   const toggleCondition = (condition: string) => {
     setSelectedConditions(prev =>
-      prev.includes(condition)
-        ? prev.filter(c => c !== condition)
-        : [...prev, condition]
+      prev.includes(condition) ? prev.filter(c => c !== condition) : [...prev, condition]
     );
   };
 
-  const handleContinue = () => {
-    if (password !== confirmPassword) {
-      alert('As senhas não coincidem.');
-      return;
-    }
-
-    const age = birthDate ? calcAge(birthDate) : null;
+  // Função disparada APENAS se o Zod aprovar todos os dados
+const onSubmit = (data: SetupFormData) => {
+    const age = calcAge(data.birthDate) || 0; 
+    const parsedWeight = parseFloat(data.weight);
+    const parsedHeight = parseFloat(data.height);
     
-    let dailyCalorieGoal = null
-    if (age && weight && height && sex && activityLevel) {
-      dailyCalorieGoal = calcDailyCalories(
-        sex as any,
-        parseFloat(weight),
-        parseFloat(height),
-        age,
-        activityLevel as any 
-      );
-    }
+    const dailyCalorieGoal = calcDailyCalories(
+      data.sex as any,
+      parsedWeight,
+      parsedHeight,
+      age,
+      data.activityLevel as any
+    );
     
     dispatch(setProfile({
-      name,
-      birthDate,
-      weightKg: parseFloat(weight) || null,
-      heightCm: parseFloat(height) || null,
-      sex: sex as any,
-      activityLevel: activityLevel as any,
-      mainGoal: mainGoal as any,
+      name: data.name,
+      birthDate: data.birthDate,
+      weightKg: parsedWeight,
+      heightCm: parsedHeight,
+      sex: data.sex as any,
+      activityLevel: data.activityLevel as any,
+      mainGoal: data.mainGoal as any,
       dailyCalorieGoal
     }));
     onContinue();
@@ -90,8 +108,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-
-      {/* Header */}
+      {/* Header e Progress Bar mantidos */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <Text style={styles.backIcon}>←</Text>
@@ -103,7 +120,6 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Barra de progresso */}
       <View style={styles.progressBar}>
         <View style={styles.progressFill} />
       </View>
@@ -111,169 +127,242 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* Credenciais de acesso */}
+        {/* ── Acesso à conta ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acesso à conta</Text>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>E-mail</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="nome@exemplo.com"
-              placeholderTextColor={Colors.dark.textSecondary}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.email && styles.inputError]}
+                  placeholder="nome@exemplo.com"
+                  placeholderTextColor={Colors.dark.textSecondary}
+                  value={value}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              )}
             />
+            {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Senha</Text>
-            <View style={styles.inputRow}>
-              <TextInput
-                style={styles.inputFlex}
-                placeholder="mínimo 8 caracteres"
-                placeholderTextColor={Colors.dark.textSecondary}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
-              </TouchableOpacity>
-            </View>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, value } }) => (
+                <View style={[styles.inputRow, errors.password && styles.inputError]}>
+                  <TextInput
+                    style={styles.inputFlex}
+                    placeholder="mínimo 8 caracteres"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁'}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+            {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Confirmar senha</Text>
-            <TextInput
-              style={[
-                styles.input,
-                confirmPassword.length > 0 && confirmPassword !== password && styles.inputError
-              ]}
-              placeholder="repita a senha"
-              placeholderTextColor={Colors.dark.textSecondary}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry={!showPassword}
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.confirmPassword && styles.inputError]}
+                  placeholder="repita a senha"
+                  placeholderTextColor={Colors.dark.textSecondary}
+                  value={value}
+                  onChangeText={onChange}
+                  secureTextEntry={!showPassword}
+                />
+              )}
             />
-            {confirmPassword.length > 0 && confirmPassword !== password && (
-              <Text style={styles.errorText}>As senhas não coincidem</Text>
-            )}
+            {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
           </View>
         </View>
 
-        {/* O básico */}
+        {/* ── O Básico ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>O básico</Text>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Nome completo</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Seu nome"
-              placeholderTextColor={Colors.dark.textSecondary}
-              value={name}
-              onChangeText={setName}
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.name && styles.inputError]}
+                  placeholder="Seu nome"
+                  placeholderTextColor={Colors.dark.textSecondary}
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
             />
+            {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
           </View>
 
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Data de nascimento (DD/MM/AAAA)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="01/01/2000"
-              placeholderTextColor={Colors.dark.textSecondary}
-              value={birthDate}
-              onChangeText={setBirthDate}
+            <Controller
+              control={control}
+              name="birthDate"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={[styles.input, errors.birthDate && styles.inputError]}
+                  placeholder="01/01/2000"
+                  placeholderTextColor={Colors.dark.textSecondary}
+                  value={value}
+                  onChangeText={onChange}
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              )}
             />
+            {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate.message}</Text>}
           </View>
 
           <View style={styles.row}>
             <View style={styles.halfInput}>
               <Text style={styles.inputLabel}>Peso (kg)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="72"
-                placeholderTextColor={Colors.dark.textSecondary}
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="numeric"
+              <Controller
+                control={control}
+                name="weight"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={[styles.input, errors.weight && styles.inputError]}
+                    placeholder="72"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                    value={value?.toString()}
+                    onChangeText={onChange}
+                    keyboardType="numeric"
+                  />
+                )}
               />
+              {errors.weight && <Text style={styles.errorText}>{errors.weight.message}</Text>}
             </View>
             <View style={styles.halfInput}>
               <Text style={styles.inputLabel}>Altura (cm)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="178"
-                placeholderTextColor={Colors.dark.textSecondary}
-                value={height}
-                onChangeText={setHeight}
-                keyboardType="numeric"
+              <Controller
+                control={control}
+                name="height"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    style={[styles.input, errors.height && styles.inputError]}
+                    placeholder="178"
+                    placeholderTextColor={Colors.dark.textSecondary}
+                    value={value?.toString()}
+                    onChangeText={onChange}
+                    keyboardType="numeric"
+                  />
+                )}
               />
+              {errors.height && <Text style={styles.errorText}>{errors.height.message}</Text>}
             </View>
           </View>
         </View>
 
-        {/* Sobre você */}
+        {/* ── Sobre você ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre você</Text>
-
-          <View style={styles.pills}>
-            {SEX_OPTIONS.map(option => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.pill, sex === option && styles.pillActive]}
-                onPress={() => setSex(option)}
-              >
-                <Text style={[styles.pillText, sex === option && styles.pillTextActive]}>
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          
+          <Controller
+            control={control}
+            name="sex"
+            render={({ field: { onChange, value } }) => (
+              <View>
+                <View style={styles.pills}>
+                  {SEX_OPTIONS.map(option => (
+                    <TouchableOpacity
+                      key={option}
+                      style={[styles.pill, value === option && styles.pillActive]}
+                      onPress={() => onChange(option)}
+                    >
+                      <Text style={[styles.pillText, value === option && styles.pillTextActive]}>
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                {errors.sex && <Text style={styles.errorText}>{errors.sex.message}</Text>}
+              </View>
+            )}
+          />
 
           <View style={styles.gap} />
 
-          {ACTIVITY_OPTIONS.map(option => (
-            <TouchableOpacity
-              key={option.value}
-              style={[styles.radioRow, activityLevel === option.value && styles.radioRowActive]}
-              onPress={() => setActivityLevel(option.value)}
-            >
+          <Controller
+            control={control}
+            name="activityLevel"
+            render={({ field: { onChange, value } }) => (
               <View>
-                <Text style={styles.radioLabel}>{option.label}</Text>
-                <Text style={styles.radioDescription}>{option.description}</Text>
+                {ACTIVITY_OPTIONS.map(option => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.radioRow, value === option.value && styles.radioRowActive]}
+                    onPress={() => onChange(option.value)}
+                  >
+                    <View>
+                      <Text style={styles.radioLabel}>{option.label}</Text>
+                      <Text style={styles.radioDescription}>{option.description}</Text>
+                    </View>
+                    <View style={[styles.radioCircle, value === option.value && styles.radioCircleActive]}>
+                      {value === option.value && <View style={styles.radioInner} />}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {errors.activityLevel && <Text style={styles.errorText}>{errors.activityLevel.message}</Text>}
               </View>
-              <View style={[styles.radioCircle, activityLevel === option.value && styles.radioCircleActive]}>
-                {activityLevel === option.value && <View style={styles.radioInner} />}
-              </View>
-            </TouchableOpacity>
-          ))}
+            )}
+          />
         </View>
 
-        {/* Seu principal objetivo */}
+        {/* ── Seu principal objetivo ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seu principal objetivo</Text>
-          {GOAL_OPTIONS.map(option => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.goalCard,
-                mainGoal === option.value && { borderColor: option.color, borderWidth: 2, backgroundColor: `${option.color}15` }
-              ]}
-              onPress={() => setMainGoal(option.value)}
-            >
-              <View style={[styles.goalIcon, { backgroundColor: `${option.color}30` }]}>
-                <Text style={styles.goalEmoji}>{option.emoji}</Text>
+          <Controller
+            control={control}
+            name="mainGoal"
+            render={({ field: { onChange, value } }) => (
+              <View>
+                {GOAL_OPTIONS.map(option => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.goalCard,
+                      value === option.value && { borderColor: option.color, borderWidth: 2, backgroundColor: `${option.color}15` }
+                    ]}
+                    onPress={() => onChange(option.value)}
+                  >
+                    <View style={[styles.goalIcon, { backgroundColor: `${option.color}30` }]}>
+                      <Text style={styles.goalEmoji}>{option.emoji}</Text>
+                    </View>
+                    <Text style={styles.goalLabel}>{option.label}</Text>
+                  </TouchableOpacity>
+                ))}
+                {errors.mainGoal && <Text style={styles.errorText}>{errors.mainGoal.message}</Text>}
               </View>
-              <Text style={styles.goalLabel}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
+            )}
+          />
         </View>
 
-        {/* Condições crônicas */}
+        {/* ── Condições crônicas (Mantido original) ── */}
         <View style={styles.section}>
           <View style={styles.conditionsHeader}>
             <Text style={styles.sectionTitle}>Você tem alguma condição crônica?</Text>
@@ -304,10 +393,8 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
         <View style={{ height: 120 }} />
       </ScrollView>
-
-      {/* Botão fixo no rodapé */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleSubmit(onSubmit)}>
           <Text style={styles.continueText}>Continuar →</Text>
         </TouchableOpacity>
         <Text style={styles.footerNote}>Você pode atualizar isso depois</Text>
@@ -317,6 +404,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
   );
 }
 
+// Estilos originais mantidos intactos abaixo...
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -2,7 +2,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-nati
 import { Colors, Typography } from '../../../constants';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { updateSteps } from '../../../store/slices/stepsSlice';
-import DashboardHeader from '../components/DashboardHeader';
+import { DashboardHeader } from '../components/DashboardHeader';
 import ScoreCard from '../components/ScoreCard';
 import MetricsBanner from '../components/MetricsBanner';
 import QuickStatsGrid from '../components/QuickStatsGrid';

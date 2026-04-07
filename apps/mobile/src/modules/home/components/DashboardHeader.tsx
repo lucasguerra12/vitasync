@@ -1,5 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect } from 'react';
 import { Colors, Typography } from '../../../constants';
+import { NotificationService } from '../../../services/NotificationService';
 
 interface Props {
   userName: string;
@@ -7,12 +9,25 @@ interface Props {
   onNotificationPress?: () => void;
 }
 
-export default function DashboardHeader({ userName, hasNotification = false, onNotificationPress }: Props) {
+export function DashboardHeader({ userName, hasNotification = false, onNotificationPress }: Props) {
+  useEffect(() => {
+    NotificationService.requestPermissions();
+  }, []);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Bom dia';
     if (hour < 18) return 'Boa tarde';
     return 'Boa noite';
+  };
+
+  const handleNotificationClick = () => {
+    if (onNotificationPress) onNotificationPress();
+    NotificationService.scheduleLocalNotification(
+      "Hora de se hidratar! 💧",
+      "Beba um copo de água para manter seu nível de energia.",
+      2
+    );
   };
 
   return (
@@ -22,7 +37,7 @@ export default function DashboardHeader({ userName, hasNotification = false, onN
         <Text style={styles.name}>{userName} 👋</Text>
       </View>
 
-      <TouchableOpacity style={styles.notificationButton} onPress={onNotificationPress}>
+      <TouchableOpacity style={styles.notificationButton} onPress={handleNotificationClick}>
         <Text style={styles.notificationIcon}>🔔</Text>
         {hasNotification && <View style={styles.notificationDot} />}
       </TouchableOpacity>
