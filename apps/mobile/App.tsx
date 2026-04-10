@@ -12,6 +12,8 @@ import { useStepCounter } from './src/sensors/useStepCounter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InAppNotification } from './src/components/ui/InAppNotification';
 
+// Removemos a importação bugada do DatabaseProvider!
+
 function AppContent() {
   const [fontsLoaded] = useFonts({
     PublicSans: PublicSans_400Regular,
