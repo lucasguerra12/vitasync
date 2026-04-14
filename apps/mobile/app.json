@@ -42,7 +42,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-camera",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O VitaSync precisa de acesso à câmera para você registrar as fotos do seu diário alimentar."
+        }
+      ],
       "expo-local-authentication",
       "expo-location",
       "expo-notifications",
