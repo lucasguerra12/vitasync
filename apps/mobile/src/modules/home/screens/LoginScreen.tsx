@@ -7,8 +7,6 @@ import { Colors, Typography } from '../../../constants';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAppDispatch } from '../../../store/hooks';
 import { loginSuccess } from '../../../store/slices/authSlice';
-
-// Importações do WatermelonDB
 import { database } from '../../../database';
 import Profile from '../../../database/models/Profile';
 
@@ -24,11 +22,9 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // MÁGICA 1: Testando o Banco Offline na hora do Login
   const createOfflineSession = async (userEmail: string) => {
     try {
       await database.write(async () => {
-        // Salva um perfil de teste no SQLite do celular
         await database.collections.get<Profile>('profiles').create((profile: any) => {
           profile.name = 'Usuário Teste';
           profile.age = 25;
@@ -40,10 +36,8 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
         });
       });
 
-      // Lê o banco para provar que salvou
       const allProfiles = await database.collections.get<Profile>('profiles').query().fetch();
       
-      // Mostra um alerta nativo para o professor ver que funcionou!
       Alert.alert(
         "Sessão Offline Criada! 💾", 
         `Bem-vindo, ${userEmail}.\nTemos ${allProfiles.length} perfil(is) salvo(s) no WatermelonDB sem internet!`
@@ -61,17 +55,13 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
       return;
     }
     
-    // Grava no banco, muda o Redux e entra no app
     await createOfflineSession(email);
     dispatch(loginSuccess({ userId: '1', email }));
     onLogin();
   };
 
-  // MÁGICA 2: O Leitor Biométrico
-  const handleBiometrics = async () => {
-    // 1. O celular tem o hardware? (Leitor de digital ou câmera FaceID)
+    const handleBiometrics = async () => {
     const hasHardware = await LocalAuthentication.hasHardwareAsync();
-    // 2. O usuário cadastrou o dedo/rosto nas configurações do celular?
     const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
     if (!hasHardware || !isEnrolled) {
@@ -79,11 +69,10 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
       return;
     }
 
-    // 3. Sobe o Modal nativo do Android/iOS pedindo a digital
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Acesse o VitaSync com sua digital',
       fallbackLabel: 'Usar PIN/Senha',
-      disableDeviceFallback: false, // Permite que o usuário use o PIN do celular se a digital falhar
+      disableDeviceFallback: false,
     });
 
     if (result.success) {
