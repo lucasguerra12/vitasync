@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "infoPlist":{
+      "infoPlist": {
         "NSMotionUsageDescription": "O VitaSync precisa do acelerômetro para contar seus passos em segundo plano."
       },
       "bundleIdentifier": "com.lucasguerra.vitasync"
@@ -35,14 +35,41 @@
         "ACCESS_BACKGROUND_LOCATION",
         "CAMERA",
         "USE_BIOMETRIC",
-        "USE_FINGERPRINT"
+        "USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-camera",
+      [
+        "@morrowdigital/watermelondb-expo-plugin",
+        {
+          "disableJsi": true
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "pickFirst": ["**/libc++_shared.so"]
+            }
+          }
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O VitaSync precisa de acesso à câmera para você registrar as fotos do seu diário alimentar."
+        }
+      ],
       "expo-local-authentication",
       "expo-location",
       "expo-notifications",
@@ -50,7 +77,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "seu-project-id-aqui"
+        "projectId": "dc279851-e2a2-4b98-8804-ecccc3446d7c"
       }
     }
   }

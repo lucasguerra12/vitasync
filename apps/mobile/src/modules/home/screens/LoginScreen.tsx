@@ -28,8 +28,18 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
   const createOfflineSession = async (userEmail: string) => {
     try {
       await database.write(async () => {
-        // Salva um perfil de teste no SQLite do celular
-        await database.collections.get<Profile>('profiles').create((profile: any) => {
+        const profilesCollection = database.collections.get<Profile>('profiles');
+
+        // 1. Busca todas as sessões antigas que ficaram "presas" no celular
+        const oldProfiles = await profilesCollection.query().fetch();
+        
+        // 2. Apaga todas permanentemente (Limpando o banco)
+        for (const profile of oldProfiles) {
+          await profile.destroyPermanently();
+        }
+
+        // 3. Salva a nova sessão limpinha
+        await profilesCollection.create((profile: any) => {
           profile.name = 'Usuário Teste';
           profile.age = 25;
           profile.weight = 70;
@@ -40,10 +50,10 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
         });
       });
 
-      // Lê o banco para provar que salvou
+      // Lê o banco para confirmar
       const allProfiles = await database.collections.get<Profile>('profiles').query().fetch();
       
-      // Mostra um alerta nativo para o professor ver que funcionou!
+      // O Alerta agora vai mostrar sempre "1 perfil(is) salvo(s)"
       Alert.alert(
         "Sessão Offline Criada! 💾", 
         `Bem-vindo, ${userEmail}.\nTemos ${allProfiles.length} perfil(is) salvo(s) no WatermelonDB sem internet!`

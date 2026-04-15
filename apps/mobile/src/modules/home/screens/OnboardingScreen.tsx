@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingBottom: 40,
     justifyContent: 'flex-end',
-    gap: 16,
   },
   dots: {
     flexDirection: 'row',
@@ -233,5 +232,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontSize: Typography.sizes.sm,
     fontFamily: Typography.fonts.body,
+    top: 8,
   },
 });
