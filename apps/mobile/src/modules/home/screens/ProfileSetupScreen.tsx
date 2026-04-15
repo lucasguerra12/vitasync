@@ -7,6 +7,8 @@ import { calcAge, calcDailyCalories } from '../../../utils';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { database } from '../../../database';
+import Profile from '../../../database/models/Profile'; 
 
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
 
@@ -80,7 +82,8 @@ const { control, handleSubmit, formState: { errors } } = useForm<SetupFormData>(
   };
 
   // Função disparada APENAS se o Zod aprovar todos os dados
-const onSubmit = (data: SetupFormData) => {
+// Transformamos em async para o banco de dados poder processar
+  const onSubmit = async (data: SetupFormData) => {
     const age = calcAge(data.birthDate) || 0; 
     const parsedWeight = parseFloat(data.weight);
     const parsedHeight = parseFloat(data.height);
@@ -93,6 +96,7 @@ const onSubmit = (data: SetupFormData) => {
       data.activityLevel as any
     );
     
+    // 1. Salva na memória rápida do app (Redux)
     dispatch(setProfile({
       name: data.name,
       birthDate: data.birthDate,
@@ -103,6 +107,34 @@ const onSubmit = (data: SetupFormData) => {
       mainGoal: data.mainGoal as any,
       dailyCalorieGoal
     }));
+
+    // 2. Salva fisicamente no aparelho (WatermelonDB) com os dados REAIS
+    try {
+      await database.write(async () => {
+        const profilesCollection = database.collections.get<Profile>('profiles');
+
+        // Limpa qualquer sessão antiga que tenha ficado no banco
+        const oldProfiles = await profilesCollection.query().fetch();
+        for (const p of oldProfiles) {
+          await p.destroyPermanently();
+        }
+
+        // Grava o perfil exato que você digitou no formulário
+        await profilesCollection.create((profile: any) => {
+          profile.name = data.name;
+          profile.age = age;
+          profile.weight = parsedWeight;
+          profile.height = parsedHeight / 100; // Transformando cm em metros (ex: 175 para 1.75)
+          profile.gender = data.sex === 'Masculino' ? 'M' : data.sex === 'Feminino' ? 'F' : 'O';
+          profile.activityLevel = data.activityLevel;
+          profile.goal = data.mainGoal;
+        });
+      });
+      console.log("✅ Perfil REAL salvo no SQLite com sucesso!");
+    } catch (error) {
+      console.error("❌ Erro ao salvar no banco:", error);
+    }
+
     onContinue();
   };
 
