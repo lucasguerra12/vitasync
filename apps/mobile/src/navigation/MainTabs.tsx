@@ -1,71 +1,86 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import { Text } from 'react-native';
-import { Colors, Typography } from '../constants';
-import DashboardScreen from '../modules/home/screens/DashboardScreen';
-import IMCScreen from '../modules/home/screens/IMCScreen'
-import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
+import  DashboardScreen  from '../modules/home/screens/DashboardScreen';
+import { NutriLensScreen } from '../modules/nutrilens/screens/NutriLensScreen';
+
+// Ecrãs "Temporários" (Placeholders para as próximas etapas)
+const FitTrackScreen = () => (
+  <View style={styles.placeholder}><Text style={styles.placeholderText}>💪 FitTrack (Em Breve)</Text></View>
+);
+const MindZenScreen = () => (
+  <View style={styles.placeholder}><Text style={styles.placeholderText}>🧘 MindZen (Em Breve)</Text></View>
+);
+const HealthPactScreen = () => (
+  <View style={styles.placeholder}><Text style={styles.placeholderText}>🤝 HealthPact (Sprint 3)</Text></View>
+);
 
 const Tab = createBottomTabNavigator();
-const HomeStack = createStackNavigator();
-
-function NutriLensScreen() { return null; }
-function FitTrackScreen() { return null; }
-function MindZenScreen() { return null; }
-function HealthPactScreen() { return null; }
-
-function DashboardWrapper() {
-  const navigation = useNavigation<any>();
-  return <DashboardScreen onOpenIMC={() => navigation.navigate('IMC')} />;
-}
-
-function HomeStackNavigator() {
-  return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="Dashboard" component={DashboardWrapper} />
-      <HomeStack.Screen name="IMC" component={() => {
-        const navigation = useNavigation<any>();
-        return <IMCScreen onBack={() => navigation.goBack()} />;
-      }} />
-    </HomeStack.Navigator>
-  );
-}
 
 export default function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.dark.surface,
-          borderTopColor: Colors.dark.border,
-          height: 64,
+          backgroundColor: '#1E293B',
+          borderTopWidth: 1,
+          borderTopColor: '#334155',
+          height: 65,
           paddingBottom: 10,
+          paddingTop: 5,
         },
-        tabBarActiveTintColor: Colors.home,
-        tabBarInactiveTintColor: Colors.dark.textSecondary,
-        tabBarLabelStyle: {
-          fontSize: Typography.sizes.xs,
-          fontFamily: Typography.fonts.body,
-          fontWeight: Typography.weights.medium,
-        },
-        tabBarIcon: ({ color }) => {
-          const icons: Record<string, string> = {
-            Home: '🏠',
-            NutriLens: '🥗',
-            FitTrack: '💪',
-            MindZen: '🧘',
-            HealthPact: '👥',
-          };
-          return <Text style={{ fontSize: 20 }}>{icons[route.name]}</Text>;
-        },
-      })}
+        tabBarActiveTintColor: '#10B981',
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarLabelStyle: { fontSize: 10, fontWeight: 'bold' }
+      }}
     >
-      <Tab.Screen name="Home" component={HomeStackNavigator} options={{ title: 'Início' }} />
-      <Tab.Screen name="NutriLens" component={NutriLensScreen} options={{ title: 'NutriLens' }} />
-      <Tab.Screen name="FitTrack" component={FitTrackScreen} options={{ title: 'FitTrack' }} />
-      <Tab.Screen name="MindZen" component={MindZenScreen} options={{ title: 'MindZen' }} />
-      <Tab.Screen name="HealthPact" component={HealthPactScreen} options={{ title: 'HealthPact' }} />
+      <Tab.Screen
+        name="Home"
+        component={DashboardScreen}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="grid-view" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="NutriLens"
+        component={NutriLensScreen}
+        options={{
+          tabBarLabel: 'NutriLens',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="eco" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="FitTrack"
+        component={FitTrackScreen}
+        options={{
+          tabBarLabel: 'FitTrack',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="fitness-center" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="MindZen"
+        component={MindZenScreen}
+        options={{
+          tabBarLabel: 'MindZen',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="self-improvement" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="HealthPact"
+        component={HealthPactScreen}
+        options={{
+          tabBarLabel: 'HealthPact',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="groups" size={size} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  placeholder: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
+  placeholderText: { color: '#94A3B8', fontSize: 20, fontWeight: 'bold' }
+});

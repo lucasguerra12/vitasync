@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { field, date } from '@nozbe/watermelondb/decorators';
+import { field, date, readonly } from '@nozbe/watermelondb/decorators';
 
 export default class Meal extends Model {
   static table = 'meals';
@@ -10,7 +10,13 @@ export default class Meal extends Model {
   @field('protein') protein!: number;
   @field('carbs') carbs!: number;
   @field('fat') fat!: number;
-  @field('photo_uri') photoUri?: string;
   
-  @date('logged_at') loggedAt!: number;
+  // AQUI ESTÁ A CORREÇÃO: Avisando o TypeScript que a porção existe!
+  @field('portion') portion!: number; 
+  
+  @field('photo_uri') photoUri?: string;
+
+  @readonly @date('created_at') createdAt!: Date;
+  @readonly @date('updated_at') updatedAt!: Date;
+  @date('logged_at') loggedAt!: Date;
 }

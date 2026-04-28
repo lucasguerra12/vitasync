@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
-  version: 1,
+  version: 3,
   tables: [
     tableSchema({
       name: 'profiles',
@@ -28,13 +28,16 @@ export default appSchema({
       name: 'meals',
       columns: [
         { name: 'name', type: 'string' },
-        { name: 'meal_type', type: 'string' }, // 'breakfast', 'lunch', 'snack', 'dinner'
+        { name: 'meal_type', type: 'string' },
         { name: 'calories', type: 'number' },
         { name: 'protein', type: 'number' },
         { name: 'carbs', type: 'number' },
         { name: 'fat', type: 'number' },
-        { name: 'photo_uri', type: 'string', isOptional: true }, 
-        { name: 'logged_at', type: 'number', isIndexed: true }
+        { name: 'portion', type: 'number' }, 
+        { name: 'photo_uri', type: 'string', isOptional: true },
+        { name: 'logged_at', type: 'number' },
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
       ]
     }),
     tableSchema({ 

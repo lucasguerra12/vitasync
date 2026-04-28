@@ -1,161 +1,85 @@
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
-import { Colors, Typography } from '../../../constants';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { updateSteps } from '../../../store/slices/stepsSlice';
+import React from 'react';
+import { View, ScrollView, StyleSheet, SafeAreaView, Text } from 'react-native';
 import { DashboardHeader } from '../components/DashboardHeader';
-import ScoreCard from '../components/ScoreCard';
-import MetricsBanner from '../components/MetricsBanner';
-import QuickStatsGrid from '../components/QuickStatsGrid';
-import TodayLogRow from '../components/TodayLogRow';
-import InsightCard from '../components/InsightCard';
-import MeditationBanner from '../components/MeditationBanner';
-import { useEffect, useState } from 'react';
-import { database } from '../../../database';
-import Profile from '../../../database/models/Profile';
+import { ScoreCard } from '../components/ScoreCard';
+import { MetricsBanner } from '../components/MetricsBanner';
+import { QuickStatsGrid } from '../components/QuickStatsGrid';
+import { useAppSelector } from '../../../store/hooks';
 
-interface Props {
-  onOpenIMC?: () => void;
-}
+// IMPORTAÇÃO DO CÉREBRO
+import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
 
-export default function DashboardScreen({ onOpenIMC }: Props) {
-  const profile = useAppSelector(state => state.profile);
-  const todaySteps = useAppSelector(state => state.steps.todaySteps);
-  const dispatch = useAppDispatch();
-  const [dbCount, setDbCount] = useState(0);
-  // Esse código roda toda vez que a tela de Dashboard abre
-  useEffect(() => {
-    const fetchRealData = async () => {
-      try {
-        // Busca todos os registros direto do SQLite
-        const allProfiles = await database.collections.get<Profile>('profiles').query().fetch();
-        setDbCount(allProfiles.length);
-        
-        // Imprime o "Raio-X" no terminal do VS Code pro professor ver a estrutura!
-        console.log("💾 RAIO-X DO SQLITE (WATERMELONDB) 💾");
-        allProfiles.forEach(p => {
-          console.log(`- Nome: ${p.name} | Objetivo: ${p.goal} | ID Interno: ${p.id}`);
-        });
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchRealData();
-  }, []);
-
-  // Dados reais puxados do Redux (ou fallback padrão)
-  const calorieTarget = profile.dailyCalorieGoal || 2000;
-  const stepTarget = profile.dailyStepGoal || 10000;
-  const waterTarget = profile.dailyWaterGoalMl ? (profile.dailyWaterGoalMl / 1000) : 2.0;
-
-  // Cards mantidos, porém zerados aguardando os dados reais dos sensores (Sprint 2)
-  const METRICS_ZEROED = [
-    { label: 'Nutrição', value: 0, color: Colors.nutrilens },
-    { label: 'Sono', value: 0, color: Colors.mindzen },
-    { label: 'Movimento', value: 0, color: Colors.fittrack },
-    { label: 'Hidratação', value: 0, color: Colors.info },
-  ];
-
-  const STATS_REAL = [
-    { label: 'Calorias', value: '0', target: calorieTarget.toLocaleString('pt-BR'), unit: 'kcal', color: Colors.nutrilens, emoji: '🍽️' },
-    { label: 'Passos', value: todaySteps.toLocaleString('pt-BR'), target: stepTarget.toLocaleString('pt-BR'), unit: '', color: Colors.fittrack, emoji: '👟' },
-    { label: 'Água', value: '0', target: waterTarget.toLocaleString('pt-BR'), unit: 'L', color: Colors.info, emoji: '💧' },
-    { label: 'Freq. Card.', value: '--', target: '--', unit: 'bpm', color: Colors.error, emoji: '❤️' },
-  ];
-
-  const handleSimulateSteps = () => {
-    dispatch(updateSteps(todaySteps + 500));
-  };
+export function DashboardScreen() {
+  const profile = useAppSelector((state) => state.profile);
+  
+  // PUXANDO AS CALORIAS REAIS DO BANCO
+  const { totals } = useDailyNutrition();
+  
+  // Meta de calorias (pode vir do perfil)
+  const GOAL_KCAL = 2100; 
+  // Progresso em % travado em 100%
+  const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-
-        <DashboardHeader
-          userName={profile.name ?? 'Visitante'}
-          hasNotification={false}
-          onNotificationPress={() => {}}
-        />
-
-        {/* 👇 COLE A ETIQUETA EXATAMENTE AQUI 👇 */}
-        <View style={{ backgroundColor: '#10B981', padding: 8, marginHorizontal: 24, borderRadius: 8, marginTop: 10, marginBottom: 10 }}>
-          <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
-            🟢 {dbCount} Sessões salvas offline no SQLite
-          </Text>
+    <SafeAreaView style={styles.container}>
+      <DashboardHeader name={profile.name || 'Usuário'} />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* CARD REATIVO DE CALORIAS */}
+        <View style={styles.calorieCard}>
+          <Text style={styles.calorieTitle}>Diário Alimentar</Text>
+          <Text style={styles.calorieCount}>{totals.calories} / {GOAL_KCAL} kcal</Text>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+          </View>
         </View>
-        {/* 👆 ================================= 👆 */}
 
-        {/* Score zerado no início */}
-        <ScoreCard score={0} streakDays={0} trend={0} />
-
-        <MetricsBanner metrics={METRICS_ZEROED} />
-
-        <QuickStatsGrid stats={STATS_REAL} />
-
-        {__DEV__ && (
-          <TouchableOpacity style={styles.devButton} onPress={handleSimulateSteps}>
-            <Text style={styles.devButtonText}>🐛 DEV: Simular +500 Passos</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity style={styles.imcButton} onPress={onOpenIMC}>
-          <Text style={styles.imcButtonText}>📊 Calcular meu IMC</Text>
-        </TouchableOpacity>
-
-        <TodayLogRow
-          items={[]} // Lista vazia para mostrar que não há registros falsos
-          onSeeAll={() => {}}
-        />
-
-        <InsightCard
-          insight="Sem dados suficientes. Continue usando o app para gerarmos insights de saúde."
-          onViewMore={() => {}}
-        />
-
-        <MeditationBanner
-          message="3 minutos podem mudar sua tarde. Que tal uma pausa agora?"
-          onStart={() => {}}
-        />
-
+        {/* COMPONENTES ANTERIORES DO SEU DASHBOARD */}
+        <ScoreCard score={85} trend="up" />
+        <MetricsBanner />
+        <QuickStatsGrid />
+        
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.dark.background,
-  },
-  imcButton: {
-    marginHorizontal: 24,
-    marginBottom: 12,
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  scrollContent: { padding: 16, paddingBottom: 100 },
+  
+  // Estilos do Card de Calorias
+  calorieCard: { 
+    backgroundColor: '#1E293B', 
+    padding: 20, 
+    borderRadius: 16, 
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
-    padding: 16,
-    alignItems: 'center',
+    borderColor: '#334155'
   },
-  imcButtonText: {
-    fontSize: Typography.sizes.base,
-    fontFamily: Typography.fonts.body,
-    fontWeight: Typography.weights.medium,
-    color: Colors.dark.text,
+  calorieTitle: { 
+    color: '#94A3B8', 
+    fontSize: 12, 
+    fontWeight: 'bold', 
+    textTransform: 'uppercase',
+    letterSpacing: 1
   },
-  devButton: {
-    marginHorizontal: 24,
-    marginBottom: 16,
-    backgroundColor: Colors.error,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ff0000',
-    borderStyle: 'dashed',
+  calorieCount: { 
+    color: '#F1F5F9', 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginVertical: 12 
   },
-  devButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-  }
+  progressBarBg: { 
+    height: 10, 
+    backgroundColor: '#0F172A', 
+    borderRadius: 5, 
+    width: '100%',
+    overflow: 'hidden'
+  },
+  progressBarFill: { 
+    height: '100%', 
+    backgroundColor: '#10B981', 
+    borderRadius: 5 
+  },
 });
