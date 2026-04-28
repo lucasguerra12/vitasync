@@ -9,6 +9,9 @@ import QuickStatsGrid from '../components/QuickStatsGrid';
 import TodayLogRow from '../components/TodayLogRow';
 import InsightCard from '../components/InsightCard';
 import MeditationBanner from '../components/MeditationBanner';
+import { useEffect, useState } from 'react';
+import { database } from '../../../database';
+import Profile from '../../../database/models/Profile';
 
 interface Props {
   onOpenIMC?: () => void;
@@ -18,6 +21,27 @@ export default function DashboardScreen({ onOpenIMC }: Props) {
   const profile = useAppSelector(state => state.profile);
   const todaySteps = useAppSelector(state => state.steps.todaySteps);
   const dispatch = useAppDispatch();
+  const [dbCount, setDbCount] = useState(0);
+  // Esse código roda toda vez que a tela de Dashboard abre
+  useEffect(() => {
+    const fetchRealData = async () => {
+      try {
+        // Busca todos os registros direto do SQLite
+        const allProfiles = await database.collections.get<Profile>('profiles').query().fetch();
+        setDbCount(allProfiles.length);
+        
+        // Imprime o "Raio-X" no terminal do VS Code pro professor ver a estrutura!
+        console.log("💾 RAIO-X DO SQLITE (WATERMELONDB) 💾");
+        allProfiles.forEach(p => {
+          console.log(`- Nome: ${p.name} | Objetivo: ${p.goal} | ID Interno: ${p.id}`);
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchRealData();
+  }, []);
 
   // Dados reais puxados do Redux (ou fallback padrão)
   const calorieTarget = profile.dailyCalorieGoal || 2000;
@@ -52,6 +76,14 @@ export default function DashboardScreen({ onOpenIMC }: Props) {
           hasNotification={false}
           onNotificationPress={() => {}}
         />
+
+        {/* 👇 COLE A ETIQUETA EXATAMENTE AQUI 👇 */}
+        <View style={{ backgroundColor: '#10B981', padding: 8, marginHorizontal: 24, borderRadius: 8, marginTop: 10, marginBottom: 10 }}>
+          <Text style={{ color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
+            🟢 {dbCount} Sessões salvas offline no SQLite
+          </Text>
+        </View>
+        {/* 👆 ================================= 👆 */}
 
         {/* Score zerado no início */}
         <ScoreCard score={0} streakDays={0} trend={0} />
