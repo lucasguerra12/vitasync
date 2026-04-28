@@ -49,22 +49,6 @@
     },
     "plugins": [
       [
-        "@morrowdigital/watermelondb-expo-plugin",
-        {
-          "disableJsi": true
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "packagingOptions": {
-              "pickFirst": ["**/libc++_shared.so"]
-            }
-          }
-        }
-      ],
-      [
         "expo-camera",
         {
           "cameraPermission": "O VitaSync precisa de acesso à câmera para você registrar as fotos do seu diário alimentar."

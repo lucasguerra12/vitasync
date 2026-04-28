@@ -1,0 +1,12 @@
+[
+  { "id": "1", "name": "Arroz branco cozido", "calories": 130, "protein": 2.5, "carbs": 28.1, "fat": 0.2 },
+  { "id": "2", "name": "Feijão carioca cozido", "calories": 76, "protein": 4.8, "carbs": 13.6, "fat": 0.5 },
+  { "id": "3", "name": "Peito de frango grelhado", "calories": 159, "protein": 32.0, "carbs": 0.0, "fat": 2.5 },
+  { "id": "4", "name": "Ovo de galinha cozido", "calories": 146, "protein": 13.3, "carbs": 0.6, "fat": 9.5 },
+  { "id": "5", "name": "Pão francês", "calories": 300, "protein": 8.0, "carbs": 58.6, "fat": 3.1 },
+  { "id": "6", "name": "Banana prata crua", "calories": 98, "protein": 1.3, "carbs": 26.0, "fat": 0.1 },
+  { "id": "7", "name": "Maçã fuji crua", "calories": 52, "protein": 0.3, "carbs": 15.2, "fat": 0.0 },
+  { "id": "8", "name": "Leite integral", "calories": 62, "protein": 3.3, "carbs": 5.0, "fat": 3.2 },
+  { "id": "9", "name": "Alface crespa crua", "calories": 11, "protein": 1.3, "carbs": 1.7, "fat": 0.2 },
+  { "id": "10", "name": "Patinho de boi grelhado", "calories": 219, "protein": 35.9, "carbs": 0.0, "fat": 7.3 }
+]
