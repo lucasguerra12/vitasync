@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
-import  DashboardScreen  from '../modules/home/screens/DashboardScreen';
+import  { DashboardScreen }  from '../modules/home/screens/DashboardScreen';
 import { NutriLensScreen } from '../modules/nutrilens/screens/NutriLensScreen';
 
 // Ecrãs "Temporários" (Placeholders para as próximas etapas)
