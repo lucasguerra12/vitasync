@@ -11,6 +11,8 @@ interface ProfileState {
   dailyCalorieGoal: number | null;
   dailyWaterGoalMl: number;
   dailyStepGoal: number;
+  currentWaterMl: number; 
+  currentSteps: number;   
 }
 
 const initialState: ProfileState = {
@@ -24,6 +26,8 @@ const initialState: ProfileState = {
   dailyCalorieGoal: null,
   dailyWaterGoalMl: 2000,
   dailyStepGoal: 10000,
+  currentWaterMl: 0,
+  currentSteps: 0,
 };
 
 const profileSlice = createSlice({
@@ -36,9 +40,15 @@ const profileSlice = createSlice({
     setCalorieGoal: (state, action: PayloadAction<number>) => {
       state.dailyCalorieGoal = action.payload;
     },
+    addWater: (state, action: PayloadAction<number>) => {
+      state.currentWaterMl += action.payload;
+    },
+    addSteps: (state, action: PayloadAction<number>) => {
+      state.currentSteps += action.payload;
+    },
     clearProfile: () => initialState,
   },
 });
 
-export const { setProfile, setCalorieGoal, clearProfile } = profileSlice.actions;
+export const { setProfile, setCalorieGoal, addWater, addSteps, clearProfile } = profileSlice.actions;
 export default profileSlice.reducer;

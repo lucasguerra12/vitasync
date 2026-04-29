@@ -7,6 +7,10 @@ export function useDailyNutrition() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [groupedMeals, setGroupedMeals] = useState<any[]>([]);
   const [totals, setTotals] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  
+  // Novos estados para o Dashboard
+  const [lastMeal, setLastMeal] = useState({ name: 'No meals', kcal: 0 });
+  const [topNutrient, setTopNutrient] = useState({ name: 'Carbs', icon: '🌾' });
 
   useFocusEffect(
     useCallback(() => {
@@ -19,8 +23,6 @@ export function useDailyNutrition() {
 
           if (isActive) {
             let kcal = 0, p = 0, c = 0, f = 0;
-            
-            // Dicionário para agrupar as refeições
             const groups: any = {
               breakfast: { id: 'breakfast', name: 'Breakfast', icon: 'wb-sunny', items: [], kcal: 0 },
               lunch: { id: 'lunch', name: 'Lunch', icon: 'lunch-dining', items: [], kcal: 0 },
@@ -34,7 +36,6 @@ export function useDailyNutrition() {
               c += m.carbs || 0;
               f += m.fat || 0;
 
-              // Adiciona o alimento no grupo correto (ex: "150g Arroz")
               if (groups[m.mealType]) {
                 groups[m.mealType].kcal += m.calories || 0;
                 groups[m.mealType].items.push(`${m.portion}g ${m.name}`);
@@ -47,11 +48,22 @@ export function useDailyNutrition() {
               carbs: Math.round(c),
               fat: Math.round(f)
             });
+
+            // Ordenar para ter o mais recente primeiro
+            const sortedMeals = allMeals.reverse();
+            setMeals(sortedMeals);
+
+            // Determinar Última Refeição
+            if (sortedMeals.length > 0) {
+              setLastMeal({ name: sortedMeals[0].name, kcal: sortedMeals[0].calories });
+            }
+
+            // Determinar Macro Dominante
+            let maxMacro = Math.max(p, c, f);
+            if (maxMacro === p && p > 0) setTopNutrient({ name: 'Protein', icon: '🥩' });
+            else if (maxMacro === f && f > 0) setTopNutrient({ name: 'Fat', icon: '🥑' });
+            else setTopNutrient({ name: 'Carbs', icon: '🌾' });
             
-            // A lista solta para os "Recent Scans"
-            setMeals(allMeals.reverse()); 
-            
-            // A lista agrupada para os blocos de refeição ("Today's Meals")
             setGroupedMeals(
               Object.values(groups)
                 .filter((g: any) => g.items.length > 0)
@@ -64,10 +76,9 @@ export function useDailyNutrition() {
       };
 
       fetchTodayMeals();
-
       return () => { isActive = false; };
     }, [])
   );
 
-  return { meals, groupedMeals, totals };
+  return { meals, groupedMeals, totals, lastMeal, topNutrient };
 }

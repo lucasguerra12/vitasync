@@ -4,13 +4,20 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { TacoService } from '../../../services/TacoService';
 import { useDailyNutrition } from '../hooks/useDailyNutrition';
 
+// IMPORTAÇÕES DO REDUX
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { addWater } from '../../../store/slices/profileSlice';
+
 export function NutriLensScreen({ navigation }: any) {
   const [activeTab, setActiveTab] = useState<'Camera' | 'Manual'>('Camera');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   
-  // O CÉREBRO REATIVO
   const { meals, groupedMeals, totals } = useDailyNutrition();
+  
+  // DADOS DO REDUX PARA A ÁGUA
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.profile);
 
   const handleSearch = (text: string) => {
     setSearchTerm(text);
@@ -18,44 +25,29 @@ export function NutriLensScreen({ navigation }: any) {
     else setSearchResults([]);
   };
 
-  // Metas (Serão puxadas do perfil futuramente)
-  const GOAL_KCAL = 2100;
-  const GOAL_CARBS = 250;
-  const GOAL_PROT = 150;
-  const GOAL_FAT = 70;
-
-  // Calculando as porcentagens e travando no máximo em 100%
+  const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
+  const GOAL_CARBS = 250, GOAL_PROT = 150, GOAL_FAT = 70;
   const percCarbs = Math.min(100, Math.round((totals.carbs / GOAL_CARBS) * 100)) || 0;
   const percProt = Math.min(100, Math.round((totals.protein / GOAL_PROT) * 100)) || 0;
   const percFat = Math.min(100, Math.round((totals.fat / GOAL_FAT) * 100)) || 0;
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>NutriLens</Text>
-          <Text style={styles.subtitle}>Hoje · {totals.calories} of {GOAL_KCAL} kcal</Text>
+          <Text style={styles.subtitle}>Hoje · {totals.calories} de {GOAL_KCAL} kcal</Text>
         </View>
-        <TouchableOpacity style={styles.historyBtn}>
-          <MaterialIcons name="history" size={24} color="#F1F5F9" />
-        </TouchableOpacity>
+        <TouchableOpacity style={styles.historyBtn}><MaterialIcons name="history" size={24} color="#F1F5F9" /></TouchableOpacity>
       </View>
 
-      {/* MODE TOGGLE */}
       <View style={styles.toggleContainer}>
         <View style={styles.toggleTrack}>
-          <TouchableOpacity 
-            style={[styles.toggleBtn, activeTab === 'Camera' && styles.toggleBtnActive]}
-            onPress={() => setActiveTab('Camera')}
-          >
+          <TouchableOpacity style={[styles.toggleBtn, activeTab === 'Camera' && styles.toggleBtnActive]} onPress={() => setActiveTab('Camera')}>
             {activeTab === 'Camera' && <MaterialIcons name="photo-camera" size={16} color="#FFF" style={{ marginRight: 6 }} />}
             <Text style={[styles.toggleText, activeTab === 'Camera' && styles.toggleTextActive]}>Camera</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.toggleBtn, activeTab === 'Manual' && styles.toggleBtnActive]}
-            onPress={() => setActiveTab('Manual')}
-          >
+          <TouchableOpacity style={[styles.toggleBtn, activeTab === 'Manual' && styles.toggleBtnActive]} onPress={() => setActiveTab('Manual')}>
             <Text style={[styles.toggleText, activeTab === 'Manual' && styles.toggleTextActive]}>Manual</Text>
           </TouchableOpacity>
         </View>
@@ -63,7 +55,6 @@ export function NutriLensScreen({ navigation }: any) {
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         
-        {/* === ABA: CAMERA === */}
         {activeTab === 'Camera' && (
           <View>
             <View style={styles.cameraSection}>
@@ -81,16 +72,12 @@ export function NutriLensScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            {/* RECENT SCANS */}
             {meals.length > 0 && (
               <View style={styles.recentSection}>
                 <Text style={styles.sectionLabel}>RECENT SCANS</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
                   {meals.slice(0, 5).map((meal, idx) => (
-                    <View key={idx} style={styles.recentPill}>
-                      <View style={styles.pillDot} />
-                      <Text style={styles.pillText}>{meal.name}</Text>
-                    </View>
+                    <View key={idx} style={styles.recentPill}><View style={styles.pillDot} /><Text style={styles.pillText}>{meal.name}</Text></View>
                   ))}
                 </ScrollView>
               </View>
@@ -98,26 +85,17 @@ export function NutriLensScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* === ABA: MANUAL === */}
         {activeTab === 'Manual' && (
           <View style={styles.manualSection}>
             <View style={styles.searchBox}>
               <MaterialIcons name="search" size={24} color="#64748B" />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search food in TACO..."
-                placeholderTextColor="#64748B"
-                value={searchTerm}
-                onChangeText={handleSearch}
-              />
+              <TextInput style={styles.searchInput} placeholder="Search food in TACO..." placeholderTextColor="#64748B" value={searchTerm} onChangeText={handleSearch} />
             </View>
             {searchResults.map((item) => (
               <TouchableOpacity key={item.id} style={styles.foodResultItem} onPress={() => navigation.navigate('AddFood', { food: item })}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.foodResultName}>{item.name}</Text>
-                  <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>
-                    {item.calories} kcal • {item.protein}g Prot • {item.carbs}g Carb
-                  </Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>{item.calories} kcal • {item.protein}g Prot • {item.carbs}g Carb</Text>
                 </View>
                 <MaterialIcons name="add-circle" size={24} color="#10B981" />
               </TouchableOpacity>
@@ -125,60 +103,34 @@ export function NutriLensScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* MACROS SUMMARY */}
         <View style={styles.macrosSection}>
           <View style={styles.macrosCard}>
-            <View style={styles.macroCol}>
-              <View style={[styles.macroCircle, { borderColor: '#3B82F6' }]}><Text style={styles.macroPercent}>{percCarbs}%</Text></View>
-              <Text style={styles.macroLabel}>CARBS</Text>
-              <Text style={styles.macroGrams}>{totals.carbs}g</Text>
-            </View>
-            <View style={styles.macroCol}>
-              <View style={[styles.macroCircle, { borderColor: '#F97316' }]}><Text style={styles.macroPercent}>{percProt}%</Text></View>
-              <Text style={styles.macroLabel}>PROTEIN</Text>
-              <Text style={styles.macroGrams}>{totals.protein}g</Text>
-            </View>
-            <View style={styles.macroCol}>
-              <View style={[styles.macroCircle, { borderColor: '#EAB308' }]}><Text style={styles.macroPercent}>{percFat}%</Text></View>
-              <Text style={styles.macroLabel}>FAT</Text>
-              <Text style={styles.macroGrams}>{totals.fat}g</Text>
-            </View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#3B82F6' }]}><Text style={styles.macroPercent}>{percCarbs}%</Text></View><Text style={styles.macroLabel}>CARBS</Text><Text style={styles.macroGrams}>{totals.carbs}g</Text></View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#F97316' }]}><Text style={styles.macroPercent}>{percProt}%</Text></View><Text style={styles.macroLabel}>PROTEIN</Text><Text style={styles.macroGrams}>{totals.protein}g</Text></View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#EAB308' }]}><Text style={styles.macroPercent}>{percFat}%</Text></View><Text style={styles.macroLabel}>FAT</Text><Text style={styles.macroGrams}>{totals.fat}g</Text></View>
           </View>
         </View>
 
-        {/* TODAY'S MEALS (AGRUPADOS) */}
         <View style={styles.mealsSection}>
           <View style={styles.mealsHeader}>
             <Text style={styles.mealsTitle}>Today's meals</Text>
-            <View style={styles.totalKcalBadge}>
-              <Text style={styles.totalKcalText}>{totals.calories} kcal</Text>
-            </View>
+            <View style={styles.totalKcalBadge}><Text style={styles.totalKcalText}>{totals.calories} kcal</Text></View>
           </View>
-
           {groupedMeals.length === 0 ? (
             <Text style={{ color: '#64748B', textAlign: 'center', marginVertical: 20 }}>No meals logged today.</Text>
           ) : (
             groupedMeals.map((group, index) => (
               <View key={index} style={styles.mealCard}>
                 <View style={styles.mealCardLeft}>
-                  <View style={styles.mealImgPlaceholder}>
-                    <MaterialIcons name={group.icon} size={24} color="#94A3B8" />
-                  </View>
-                  <View style={{ width: 200 }}>
-                    <Text style={styles.mealName} numberOfLines={1}>{group.name}</Text>
-                    <Text style={styles.mealDesc} numberOfLines={2}>{group.description}</Text>
-                  </View>
+                  <View style={styles.mealImgPlaceholder}><MaterialIcons name={group.icon} size={24} color="#94A3B8" /></View>
+                  <View style={{ width: 200 }}><Text style={styles.mealName} numberOfLines={1}>{group.name}</Text><Text style={styles.mealDesc} numberOfLines={2}>{group.description}</Text></View>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.mealKcalValue}>{group.kcal}</Text>
-                  <Text style={styles.mealKcalLabel}>KCAL</Text>
-                </View>
+                <View style={{ alignItems: 'flex-end' }}><Text style={styles.mealKcalValue}>{group.kcal}</Text><Text style={styles.mealKcalLabel}>KCAL</Text></View>
               </View>
             ))
           )}
         </View>
 
-        {/* MICRONUTRIENTS STRIP */}
         <View style={styles.microSection}>
           <Text style={styles.sectionLabel}>MICRONUTRIENTS</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
@@ -188,18 +140,20 @@ export function NutriLensScreen({ navigation }: any) {
           </ScrollView>
         </View>
 
-        {/* WATER TRACKER */}
+        {/* SECÇÃO DA ÁGUA REATIVA */}
         <View style={styles.waterSection}>
           <View style={styles.waterCard}>
             <View style={styles.waterLeft}>
               <View style={styles.waterIconBg}><MaterialIcons name="water-drop" size={20} color="#FFF" /></View>
               <View>
                 <Text style={styles.waterTitle}>Hydration</Text>
-                <Text style={styles.waterDesc}>5 of 8 glasses logged</Text>
+                {/* Mostra em Litros (ex: 1.50 L) */}
+                <Text style={styles.waterDesc}>{(profile.currentWaterMl / 1000).toFixed(2)} L logged</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.waterBtn}>
-              <MaterialIcons name="add" size={24} color="#FFF" />
+            {/* O BOTÃO DISPARA O REDUX COM +500ML */}
+            <TouchableOpacity style={styles.waterBtn} onPress={() => dispatch(addWater(500))}>
+              <Text style={{color: '#FFF', fontWeight: 'bold'}}>+500ml</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -218,7 +172,7 @@ const styles = StyleSheet.create({
   toggleContainer: { paddingHorizontal: 24, paddingBottom: 16 },
   toggleTrack: { flexDirection: 'row', height: 52, backgroundColor: '#263347', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: '#334155' },
   toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
-  toggleBtnActive: { backgroundColor: '#10B981', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84 },
+  toggleBtnActive: { backgroundColor: '#10B981', elevation: 5 },
   toggleText: { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
   toggleTextActive: { color: '#FFF', fontWeight: 'bold' },
   scrollArea: { flex: 1 },
@@ -272,5 +226,5 @@ const styles = StyleSheet.create({
   waterIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   waterTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
   waterDesc: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
-  waterBtn: { width: 40, height: 40, backgroundColor: '#3B82F6', borderRadius: 12, alignItems: 'center', justifyContent: 'center' }
+  waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }
 });
