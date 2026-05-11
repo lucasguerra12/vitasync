@@ -1,14 +1,13 @@
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  TextInput, SafeAreaView, ScrollView, Alert
+  TextInput, SafeAreaView, ScrollView, Alert, ActivityIndicator
 } from 'react-native';
 import { useState } from 'react';
 import { Colors, Typography } from '../../../constants';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAppDispatch } from '../../../store/hooks';
 import { loginSuccess } from '../../../store/slices/authSlice';
-import { database } from '../../../database';
-import Profile from '../../../database/models/Profile';
+import { setProfile } from '../../../store/slices/profileSlice';
 import { supabase } from '../../../services/supabase';
 
 interface Props {
@@ -22,22 +21,48 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Atenção', 'Preencha o email e a senha para entrar.');
       return;
     }
+    
+    setIsLoading(true);
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
+
       if (error) throw error;
       if (!data.user) throw new Error("Falha ao recuperar dados do utilizador.");
-      await database.write(async () => {
-        await database.unsafeResetDatabase();
-      });
 
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error("Erro ao buscar perfil:", profileError);
+      }
+
+      if (profileData) {
+        dispatch(setProfile({
+          name: profileData.name || '',
+          birthDate: profileData.birth_date || '',
+          weightKg: profileData.weight_kg || 0,
+          heightCm: profileData.height_cm || 0,
+          sex: profileData.sex as any,
+          activityLevel: profileData.activity_level as any,
+          mainGoal: profileData.main_goal as any,
+          dailyCalorieGoal: profileData.daily_calorie_goal || 2100,
+        }));
+      }
+
+      // 4. Marcar o usuário como logado
       dispatch(loginSuccess({ 
         userId: data.user.id, 
         email: data.user.email || email 
@@ -47,6 +72,8 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
 
     } catch (error: any) {
       Alert.alert('Erro de Acesso', error.message || 'Credenciais inválidas.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,8 +93,6 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
     });
 
     if (result.success) {
-      // Para a biometria funcionar no futuro com nuvem, precisaremos salvar o JWT seguro.
-      // Por agora, ela vai apenas contornar o login se o dispositivo aceitar.
       Alert.alert('Sucesso', 'Biometria aceite! Para dados reais, use E-mail e Senha primeiro.');
     }
   };
@@ -95,7 +120,7 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
             <Text style={styles.inputLabel}>Endereço de e-mail</Text>
             <View style={styles.inputRow}>
               <Text style={styles.inputIcon}>✉</Text>
-              <TextInput style={styles.input} placeholder="nome@exemplo.com" placeholderTextColor={Colors.dark.textSecondary} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+              <TextInput style={styles.input} placeholder="nome@exemplo.com" placeholderTextColor={Colors.dark.textSecondary} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!isLoading} />
             </View>
           </View>
 
@@ -103,7 +128,7 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
             <Text style={styles.inputLabel}>Senha</Text>
             <View style={styles.inputRow}>
               <Text style={styles.inputIcon}>🔒</Text>
-              <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={Colors.dark.textSecondary} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} />
+              <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={Colors.dark.textSecondary} value={password} onChangeText={setPassword} secureTextEntry={!showPassword} editable={!isLoading} />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Text style={styles.inputIcon}>{showPassword ? '🙈' : '👁'}</Text>
               </TouchableOpacity>
@@ -112,8 +137,8 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
 
           <TouchableOpacity style={styles.forgotButton}><Text style={styles.forgotText}>Esqueci minha senha?</Text></TouchableOpacity>
 
-          <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
-            <Text style={styles.signInText}>Entrar</Text>
+          <TouchableOpacity style={styles.signInButton} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.signInText}>Entrar</Text>}
           </TouchableOpacity>
         </View>
 
@@ -122,11 +147,11 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
         </View>
 
         <View style={styles.socialButtons}>
-          <TouchableOpacity style={styles.socialButton}><Text style={styles.socialIcon}>G</Text><Text style={styles.socialText}>Google</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}><Text style={styles.socialIcon}>A</Text><Text style={styles.socialText}>Apple</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.socialButton} disabled={isLoading}><Text style={styles.socialIcon}>G</Text><Text style={styles.socialText}>Google</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.socialButton} disabled={isLoading}><Text style={styles.socialIcon}>A</Text><Text style={styles.socialText}>Apple</Text></TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.biometricButton} onPress={handleBiometrics}>
+        <TouchableOpacity style={styles.biometricButton} onPress={handleBiometrics} disabled={isLoading}>
           <View style={styles.biometricIcon}><Text style={styles.biometricEmoji}>🫆</Text></View>
           <Text style={styles.biometricText}>Usar biometria</Text>
         </TouchableOpacity>

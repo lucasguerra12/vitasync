@@ -159,8 +159,25 @@ export function NutriLensScreen({ navigation }: any) {
               <Text style={{color: '#FFF', fontWeight: 'bold'}}>+500ml</Text>
             </TouchableOpacity>
           </View>
-          
         </View>
+
+        {/* AJUSTE: BOTÃO DE RECEITAS INTELIGENTES ADICIONADO AQUI */}
+        <TouchableOpacity 
+          style={styles.recipeBtn} 
+          onPress={() => navigation.navigate('RecipeSuggestions')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.recipeBtnContent}>
+            <View style={styles.recipeIconBg}>
+              <MaterialIcons name="restaurant-menu" size={24} color="#FFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.recipeBtnTitle}>Explorar Receitas Inteligentes</Text>
+              <Text style={styles.recipeBtnSubtitle}>Sugestões baseadas no seu dia</Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={24} color="#10B981" />
+          </View>
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -217,13 +234,6 @@ const styles = StyleSheet.create({
   mealDesc: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
   mealKcalValue: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
   mealKcalLabel: { color: '#94A3B8', fontSize: 10, fontWeight: 'bold' },
-  microSection: { marginTop: 32 },
-  microCard: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', borderRadius: 12, padding: 12, minWidth: 120, marginRight: 12 },
-  microTitle: { color: '#94A3B8', fontSize: 10, fontWeight: 'bold', marginBottom: 8 },
-  microRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  microValue: { fontSize: 14, fontWeight: 'bold' },
-  microBarBg: { width: 48, height: 4, backgroundColor: '#334155', borderRadius: 2, marginBottom: 4 },
-  microBarFill: { height: '100%', borderRadius: 2 },
   waterSection: { paddingHorizontal: 24, marginTop: 32 },
   reminderOptions: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginLeft: 4 },
   waterCard: { backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -231,5 +241,44 @@ const styles = StyleSheet.create({
   waterIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   waterTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
   waterDesc: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
-  waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }
+  waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  
+  // ESTILOS DO NOVO BOTÃO DE RECEITAS
+  recipeBtn: {
+    marginTop: 32,
+    marginHorizontal: 24,
+    backgroundColor: '#1E293B',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+    padding: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  recipeBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  recipeIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recipeBtnTitle: {
+    color: '#F1F5F9',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
+  recipeBtnSubtitle: {
+    color: '#64748B',
+    fontSize: 12,
+    marginTop: 2,
+  },
 });

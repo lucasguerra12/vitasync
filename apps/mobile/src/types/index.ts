@@ -21,14 +21,15 @@ export interface AuthPayload {
 export interface Recipe {
   id: string;
   title: string;
-  description: string;
-  prep_time_minutes: number;
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
-  image_url: string;
   tags: string[];
-  main_ingredients: string[];
+  prep_time_minutes: number;
   is_featured: boolean;
+  description?: string;
+  image_url?: string;
+  main_ingredients?: string[];
+  created_at?: string;
 }
