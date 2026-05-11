@@ -135,7 +135,6 @@ export function NutriLensScreen({ navigation }: any) {
         </View>
 
         <View style={styles.waterSection}>
-          {/* OPÇÕES DE NOTIFICAÇÃO RESTAURADAS AQUI */}
           <View style={styles.reminderOptions}>
             <Text style={{color: '#94A3B8', fontSize: 10, fontWeight: 'bold', letterSpacing: 1}}>LEMBRETE:</Text>
             {[30, 40, 60].map(min => (
@@ -160,6 +159,7 @@ export function NutriLensScreen({ navigation }: any) {
               <Text style={{color: '#FFF', fontWeight: 'bold'}}>+500ml</Text>
             </TouchableOpacity>
           </View>
+          
         </View>
 
       </ScrollView>

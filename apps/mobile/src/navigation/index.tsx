@@ -8,6 +8,7 @@ import { AddFoodScreen } from '../modules/nutrilens/screens/AddFoodScreen';
 import CameraScreen from '../modules/nutrilens/screens/CameraScreen';
 import { NutritionDiaryScreen } from '../modules/nutrilens/screens/NutritionDiaryScreen';
 import { useAppSelector } from '../store/hooks';
+import { RecipeSuggestionsScreen } from '../modules/nutrilens/screens/RecipeSuggestionsScreen';
 
 const Stack = createStackNavigator();
 
@@ -25,6 +26,7 @@ export default function Navigation() {
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="AddFood" component={AddFoodScreen} />
+            <Stack.Screen name="RecipeSuggestions" component={RecipeSuggestionsScreen} />
             
             <Stack.Screen 
               name="NutritionDiary" 

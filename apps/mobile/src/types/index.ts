@@ -1,8 +1,7 @@
-// Tipagem exata do que criamos no PostgreSQL (Supabase)
 export interface UserProfile {
   id: string;
   name: string;
-  birth_date: string; // Formato YYYY-MM-DD
+  birth_date: string; 
   sex: string;
   weight_kg: number;
   height_cm: number;
@@ -17,4 +16,19 @@ export interface UserProfile {
 export interface AuthPayload {
   userId: string;
   email: string;
+}
+
+export interface Recipe {
+  id: string;
+  title: string;
+  description: string;
+  prep_time_minutes: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  image_url: string;
+  tags: string[];
+  main_ingredients: string[];
+  is_featured: boolean;
 }
