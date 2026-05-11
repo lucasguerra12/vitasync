@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { format } from 'date-fns';
 
 interface ProfileState {
   name: string | null;
@@ -12,7 +13,8 @@ interface ProfileState {
   dailyWaterGoalMl: number;
   dailyStepGoal: number;
   currentWaterMl: number; 
-  currentSteps: number;   
+  currentSteps: number;
+  lastActiveDate: string | null; // Controle do ciclo diário (Bug da Meia-Noite)
 }
 
 const initialState: ProfileState = {
@@ -28,6 +30,7 @@ const initialState: ProfileState = {
   dailyStepGoal: 10000,
   currentWaterMl: 0,
   currentSteps: 0,
+  lastActiveDate: format(new Date(), 'yyyy-MM-dd'),
 };
 
 const profileSlice = createSlice({
@@ -41,10 +44,22 @@ const profileSlice = createSlice({
       state.dailyCalorieGoal = action.payload;
     },
     addWater: (state, action: PayloadAction<number>) => {
-      state.currentWaterMl += action.payload;
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (state.lastActiveDate !== today) {
+        state.currentWaterMl = action.payload; // Novo dia: reinicia e adiciona
+        state.lastActiveDate = today;
+      } else {
+        state.currentWaterMl += action.payload;
+      }
     },
     addSteps: (state, action: PayloadAction<number>) => {
-      state.currentSteps += action.payload;
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (state.lastActiveDate !== today) {
+        state.currentSteps = action.payload; // Novo dia: reinicia e adiciona
+        state.lastActiveDate = today;
+      } else {
+        state.currentSteps += action.payload;
+      }
     },
     clearProfile: () => initialState,
   },

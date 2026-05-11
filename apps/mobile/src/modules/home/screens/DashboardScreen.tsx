@@ -5,27 +5,39 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { addSteps } from '../../../store/slices/profileSlice';
 import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
 
+// NOVO: Importando o serviço de notificações
+import { NotificationService } from '../../../services/NotificationService';
+
 export function DashboardScreen() {
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
   
-  // Extraímos também a "última refeição" e o "macro predominante"
   const { totals, lastMeal, topNutrient } = useDailyNutrition();
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
   
-  // Score Falso Temporário baseado no progresso (ou usar 78 fixo se preferir)
   const healthScore = Math.round(progressPercent) > 0 ? Math.round(progressPercent) : 78;
 
   const GOAL_STEPS = 10000;
   const stepsPercent = Math.min(100, (profile.currentSteps / GOAL_STEPS) * 100);
 
-  // Calcula quantos quadradinhos de água preencher (0 a 5)
   const GOAL_WATER = 2000;
   const waterSquaresFilled = Math.min(5, Math.floor((profile.currentWaterMl / GOAL_WATER) * 5));
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // NOVO: Função para testar a notificação
+  const handleTestNotification = async () => {
+    // Pede permissão caso o utilizador ainda não tenha dado
+    await NotificationService.requestPermissions();
+    // Dispara a notificação após 1 segundo
+    await NotificationService.scheduleLocalNotification(
+      "O seu corpo está a falar! 🗣️",
+      "Novo insight detectado: a sua dor nas costas diminuiu com a hidratação de hoje.",
+      1
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -36,7 +48,9 @@ export function DashboardScreen() {
           </View>
           <Text style={styles.greeting}>Good morning, {profile.name || 'Ana'}</Text>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
+        
+        {/* CORREÇÃO: O botão agora tem o onPress chamando a notificação */}
+        <TouchableOpacity style={styles.notificationBtn} onPress={handleTestNotification}>
           <MaterialIcons name="notifications" size={24} color="#94A3B8" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
@@ -101,7 +115,6 @@ export function DashboardScreen() {
 
           {/* Card 2: Steps */}
           <View style={[styles.gridCard, { borderTopColor: '#F97316' }]}>
-            {/* BOTÃO "INVISÍVEL" PARA TESTAR PASSOS (Ocupa a ponta direita do card) */}
             <TouchableOpacity 
               style={{ position: 'absolute', top: 5, right: 5, zIndex: 10, padding: 10, opacity: 0.2 }}
               onPress={() => dispatch(addSteps(1000))}
@@ -122,7 +135,7 @@ export function DashboardScreen() {
             </View>
           </View>
 
-          {/* Card 3: Water (REACTIVO) */}
+          {/* Card 3: Water */}
           <View style={[styles.gridCard, { borderTopColor: '#3B82F6' }]}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardLabel}>WATER</Text>
@@ -158,7 +171,7 @@ export function DashboardScreen() {
           </View>
         </View>
 
-        {/* ACTIVITY TIMELINE (TODAY'S LOG) */}
+        {/* ACTIVITY TIMELINE */}
         <View style={styles.timelineSection}>
           <View style={styles.timelineHeader}>
             <Text style={styles.sectionTitle}>Today's log</Text>
@@ -168,29 +181,21 @@ export function DashboardScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timelineScroll}>
-             
-             {/* Card 1: Última refeição (Reativo) */}
              <View style={styles.logCard}>
                <Text style={styles.logEmoji}>🥗</Text>
                <Text style={styles.logName} numberOfLines={1}>{lastMeal.name}</Text>
                <Text style={styles.logValue}>{lastMeal.kcal} kcal</Text>
              </View>
-             
-             {/* Card 2: Corrida (Mockado) */}
              <View style={styles.logCard}>
                <Text style={styles.logEmoji}>🏃</Text>
                <Text style={styles.logName}>Run</Text>
                <Text style={styles.logValue}>5.2km</Text>
              </View>
-             
-             {/* Card 3: Top Nutriente (Reativo) */}
              <View style={styles.logCard}>
                <Text style={styles.logEmoji}>{topNutrient.icon}</Text>
                <Text style={styles.logName}>{topNutrient.name}</Text>
                <Text style={styles.logValue}>Top Hit</Text>
              </View>
-             
-             {/* Card 4: Mood (Mockado) */}
              <View style={styles.logCard}>
                <Text style={styles.logEmoji}>😊</Text>
                <Text style={styles.logName}>Mood</Text>
@@ -243,7 +248,6 @@ const styles = StyleSheet.create({
   notificationBtn: { position: 'relative', padding: 8 },
   notificationDot: { position: 'absolute', top: 6, right: 6, width: 8, height: 8, backgroundColor: '#EF4444', borderRadius: 4, borderWidth: 2, borderColor: '#0F172A' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40, gap: 24 },
-  
   heroCard: { height: 180, borderRadius: 16, backgroundColor: '#0D9488', padding: 20, flexDirection: 'row', justifyContent: 'space-between', overflow: 'hidden', elevation: 5 },
   heroContent: { justifyContent: 'space-between', zIndex: 10, flex: 1 },
   heroSubtitle: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1 },
@@ -256,12 +260,10 @@ const styles = StyleSheet.create({
   heroStrip: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.2)', flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, paddingHorizontal: 20 },
   heroStripText: { fontSize: 10, color: 'rgba(255,255,255,0.9)', fontWeight: '500', letterSpacing: 0.5 },
   heroStripSeparator: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
-
   dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateText: { color: '#94A3B8', fontSize: 14, fontWeight: '500' },
   streakContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   streakText: { color: '#F59E0B', fontSize: 14, fontWeight: 'bold' },
-
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' },
   gridCard: { width: '47%', backgroundColor: '#1E293B', padding: 16, borderRadius: 16, borderTopWidth: 4, gap: 12, position: 'relative' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -271,10 +273,8 @@ const styles = StyleSheet.create({
   cardSubValue: { fontSize: 12, color: '#94A3B8', marginLeft: 4 },
   progressBarBg: { height: 6, backgroundColor: '#334155', borderRadius: 3, overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: 3 },
-  
   waterSquaresContainer: { flexDirection: 'row', gap: 4, height: 16, alignItems: 'center' },
   waterSquare: { width: 16, height: 16, borderRadius: 4 },
-
   timelineSection: { gap: 12 },
   timelineHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#F1F5F9' },
@@ -285,7 +285,6 @@ const styles = StyleSheet.create({
   logEmoji: { fontSize: 24 },
   logName: { fontSize: 12, fontWeight: 'bold', color: '#F1F5F9' },
   logValue: { fontSize: 10, color: '#94A3B8' },
-
   insightBorder: { padding: 1, borderRadius: 16, backgroundColor: '#14B8A6' },
   insightCard: { backgroundColor: '#1E293B', borderRadius: 15, padding: 20, gap: 12 },
   insightHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -294,7 +293,6 @@ const styles = StyleSheet.create({
   insightHighlight: { color: '#2DD4BF', fontWeight: 'bold' },
   insightLink: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   insightLinkText: { color: '#14B8A6', fontSize: 14, fontWeight: 'bold' },
-
   meditationCard: { backgroundColor: '#1E1B4B', borderRadius: 16, borderLeftWidth: 4, borderLeftColor: '#14B8A6', padding: 20, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   meditationText: { fontSize: 16, fontWeight: '500', color: 'rgba(255,255,255,0.9)', lineHeight: 22, marginBottom: 12, paddingRight: 40 },
   meditationBtn: { backgroundColor: '#0D9488', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 4 },

@@ -3,19 +3,16 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Tex
 import { MaterialIcons } from '@expo/vector-icons';
 import { TacoService } from '../../../services/TacoService';
 import { useDailyNutrition } from '../hooks/useDailyNutrition';
-
-// IMPORTAÇÕES DO REDUX
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { addWater } from '../../../store/slices/profileSlice';
+import { NotificationService } from '../../../services/NotificationService';
 
 export function NutriLensScreen({ navigation }: any) {
   const [activeTab, setActiveTab] = useState<'Camera' | 'Manual'>('Camera');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  
+  const [reminderInterval, setReminderInterval] = useState(0);
   const { meals, groupedMeals, totals } = useDailyNutrition();
-  
-  // DADOS DO REDUX PARA A ÁGUA
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
 
@@ -25,11 +22,15 @@ export function NutriLensScreen({ navigation }: any) {
     else setSearchResults([]);
   };
 
+  const handleSetReminder = (min: number) => {
+    setReminderInterval(min);
+    NotificationService.scheduleWaterReminder(min);
+  };
+
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
-  const GOAL_CARBS = 250, GOAL_PROT = 150, GOAL_FAT = 70;
-  const percCarbs = Math.min(100, Math.round((totals.carbs / GOAL_CARBS) * 100)) || 0;
-  const percProt = Math.min(100, Math.round((totals.protein / GOAL_PROT) * 100)) || 0;
-  const percFat = Math.min(100, Math.round((totals.fat / GOAL_FAT) * 100)) || 0;
+  const percCarbs = Math.min(100, Math.round((totals.carbs / 250) * 100)) || 0;
+  const percProt = Math.min(100, Math.round((totals.protein / 150) * 100)) || 0;
+  const percFat = Math.min(100, Math.round((totals.fat / 70) * 100)) || 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,7 +39,9 @@ export function NutriLensScreen({ navigation }: any) {
           <Text style={styles.title}>NutriLens</Text>
           <Text style={styles.subtitle}>Hoje · {totals.calories} de {GOAL_KCAL} kcal</Text>
         </View>
-        <TouchableOpacity style={styles.historyBtn}><MaterialIcons name="history" size={24} color="#F1F5F9" /></TouchableOpacity>
+        <TouchableOpacity style={styles.historyBtn} onPress={() => navigation.navigate('NutritionDiary')}>
+          <MaterialIcons name="history" size={24} color="#F1F5F9" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.toggleContainer}>
@@ -131,27 +134,28 @@ export function NutriLensScreen({ navigation }: any) {
           )}
         </View>
 
-        <View style={styles.microSection}>
-          <Text style={styles.sectionLabel}>MICRONUTRIENTS</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-            <View style={styles.microCard}><Text style={styles.microTitle}>MAGNESIUM</Text><View style={styles.microRow}><Text style={[styles.microValue, { color: '#F59E0B' }]}>47%</Text><View style={styles.microBarBg}><View style={[styles.microBarFill, { width: '47%', backgroundColor: '#F59E0B' }]} /></View></View></View>
-            <View style={styles.microCard}><Text style={styles.microTitle}>VITAMIN D</Text><View style={styles.microRow}><Text style={[styles.microValue, { color: '#EF4444' }]}>8%</Text><View style={styles.microBarBg}><View style={[styles.microBarFill, { width: '8%', backgroundColor: '#EF4444' }]} /></View></View></View>
-            <View style={styles.microCard}><Text style={styles.microTitle}>IRON</Text><View style={styles.microRow}><Text style={[styles.microValue, { color: '#F59E0B' }]}>62%</Text><View style={styles.microBarBg}><View style={[styles.microBarFill, { width: '62%', backgroundColor: '#F59E0B' }]} /></View></View></View>
-          </ScrollView>
-        </View>
-
-        {/* SECÇÃO DA ÁGUA REATIVA */}
         <View style={styles.waterSection}>
+          {/* OPÇÕES DE NOTIFICAÇÃO RESTAURADAS AQUI */}
+          <View style={styles.reminderOptions}>
+            <Text style={{color: '#94A3B8', fontSize: 10, fontWeight: 'bold', letterSpacing: 1}}>LEMBRETE:</Text>
+            {[30, 40, 60].map(min => (
+              <TouchableOpacity key={min} onPress={() => handleSetReminder(min)}>
+                <Text style={{color: reminderInterval === min ? '#10B981' : '#64748B', marginLeft: 12, fontWeight: 'bold'}}>{min}m</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => handleSetReminder(0)}>
+              <Text style={{color: reminderInterval === 0 ? '#EF4444' : '#64748B', marginLeft: 12, fontWeight: 'bold'}}>OFF</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.waterCard}>
             <View style={styles.waterLeft}>
               <View style={styles.waterIconBg}><MaterialIcons name="water-drop" size={20} color="#FFF" /></View>
               <View>
                 <Text style={styles.waterTitle}>Hydration</Text>
-                {/* Mostra em Litros (ex: 1.50 L) */}
                 <Text style={styles.waterDesc}>{(profile.currentWaterMl / 1000).toFixed(2)} L logged</Text>
               </View>
             </View>
-            {/* O BOTÃO DISPARA O REDUX COM +500ML */}
             <TouchableOpacity style={styles.waterBtn} onPress={() => dispatch(addWater(500))}>
               <Text style={{color: '#FFF', fontWeight: 'bold'}}>+500ml</Text>
             </TouchableOpacity>
@@ -221,6 +225,7 @@ const styles = StyleSheet.create({
   microBarBg: { width: 48, height: 4, backgroundColor: '#334155', borderRadius: 2, marginBottom: 4 },
   microBarFill: { height: '100%', borderRadius: 2 },
   waterSection: { paddingHorizontal: 24, marginTop: 32 },
+  reminderOptions: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginLeft: 4 },
   waterCard: { backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   waterLeft: { flexDirection: 'row', alignItems: 'center' },
   waterIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', marginRight: 16 },

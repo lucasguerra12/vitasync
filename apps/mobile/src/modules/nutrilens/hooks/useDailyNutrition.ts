@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import { Q } from '@nozbe/watermelondb';
+import { startOfDay, endOfDay } from 'date-fns';
 import { database } from '../../../database';
 import Meal from '../../../database/models/Meal';
 
@@ -7,8 +9,6 @@ export function useDailyNutrition() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [groupedMeals, setGroupedMeals] = useState<any[]>([]);
   const [totals, setTotals] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
-  
-  // Novos estados para o Dashboard
   const [lastMeal, setLastMeal] = useState({ name: 'No meals', kcal: 0 });
   const [topNutrient, setTopNutrient] = useState({ name: 'Carbs', icon: '🌾' });
 
@@ -19,7 +19,13 @@ export function useDailyNutrition() {
       const fetchTodayMeals = async () => {
         try {
           const mealsCollection = database.collections.get<Meal>('meals');
-          const allMeals = await mealsCollection.query().fetch();
+          const todayStart = startOfDay(new Date()).getTime();
+          const todayEnd = endOfDay(new Date()).getTime();
+
+          // CORREÇÃO: Traz apenas as refeições registradas HOJE
+          const allMeals = await mealsCollection.query(
+            Q.where('created_at', Q.between(todayStart, todayEnd))
+          ).fetch();
 
           if (isActive) {
             let kcal = 0, p = 0, c = 0, f = 0;
@@ -35,7 +41,6 @@ export function useDailyNutrition() {
               p += m.protein || 0;
               c += m.carbs || 0;
               f += m.fat || 0;
-
               if (groups[m.mealType]) {
                 groups[m.mealType].kcal += m.calories || 0;
                 groups[m.mealType].items.push(`${m.portion}g ${m.name}`);
@@ -49,30 +54,21 @@ export function useDailyNutrition() {
               fat: Math.round(f)
             });
 
-            // Ordenar para ter o mais recente primeiro
             const sortedMeals = allMeals.reverse();
             setMeals(sortedMeals);
 
-            // Determinar Última Refeição
-            if (sortedMeals.length > 0) {
-              setLastMeal({ name: sortedMeals[0].name, kcal: sortedMeals[0].calories });
-            }
+            if (sortedMeals.length > 0) setLastMeal({ name: sortedMeals[0].name, kcal: sortedMeals[0].calories });
 
-            // Determinar Macro Dominante
             let maxMacro = Math.max(p, c, f);
             if (maxMacro === p && p > 0) setTopNutrient({ name: 'Protein', icon: '🥩' });
             else if (maxMacro === f && f > 0) setTopNutrient({ name: 'Fat', icon: '🥑' });
             else setTopNutrient({ name: 'Carbs', icon: '🌾' });
             
             setGroupedMeals(
-              Object.values(groups)
-                .filter((g: any) => g.items.length > 0)
-                .map((g: any) => ({ ...g, description: g.items.join(' • ') }))
+              Object.values(groups).filter((g: any) => g.items.length > 0).map((g: any) => ({ ...g, description: g.items.join(' • ') }))
             );
           }
-        } catch (error) {
-          console.error(error);
-        }
+        } catch (error) { console.error(error); }
       };
 
       fetchTodayMeals();
