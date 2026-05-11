@@ -54,16 +54,14 @@ export function NutritionDiaryScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       
-      {/* NOVO: BARRA DE NAVEGAÇÃO PARA SAIR DO DIÁRIO */}
       <View style={styles.appBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <MaterialIcons name="arrow-back" size={24} color="#f8f6f6" />
         </TouchableOpacity>
         <Text style={styles.appBarTitle}>Daily Diary</Text>
-        <View style={{ width: 40 }} /> {/* Espaçador para centralizar o título */}
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* CONTROLO DE DIAS (CALENDÁRIO) */}
       <View style={styles.headerTop}>
         <TouchableOpacity style={styles.navBtn} onPress={() => setSelectedDate(subDays(selectedDate, 1))}>
           <MaterialIcons name="chevron-left" size={28} color="#ec5b13" />
@@ -90,15 +88,14 @@ export function NutritionDiaryScreen({ navigation }: any) {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           
-          {/* DONUT CHART */}
           <View style={styles.donutCard}>
             <View style={styles.donutWrapper}>
               <Svg viewBox="0 0 100 100" width={160} height={160}>
                 <Circle cx="50" cy="50" r="45" fill="transparent" stroke="rgba(236, 91, 19, 0.1)" strokeWidth="8" />
-                {bKcal > 0 && <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#3b82f6" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - bPercent} transform="rotate(-90 50 50)" strokeLinecap="round" />}
-                {lKcal > 0 && <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#22c55e" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - lPercent} transform={`rotate(${lAngle} 50 50)`} strokeLinecap="round" />}
-                {dKcal > 0 && <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#14b8a6" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - dPercent} transform={`rotate(${dAngle} 50 50)`} strokeLinecap="round" />}
-                {sKcal > 0 && <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#f59e0b" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - sPercent} transform={`rotate(${sAngle} 50 50)`} strokeLinecap="round" />}
+                {bKcal > 0 ? <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#3b82f6" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - bPercent} transform="rotate(-90 50 50)" strokeLinecap="round" /> : null}
+                {lKcal > 0 ? <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#22c55e" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - lPercent} transform={`rotate(${lAngle} 50 50)`} strokeLinecap="round" /> : null}
+                {dKcal > 0 ? <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#14b8a6" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - dPercent} transform={`rotate(${dAngle} 50 50)`} strokeLinecap="round" /> : null}
+                {sKcal > 0 ? <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#f59e0b" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - sPercent} transform={`rotate(${sAngle} 50 50)`} strokeLinecap="round" /> : null}
               </Svg>
               <View style={styles.donutCenterText}>
                 <Text style={styles.donutNumber}>{kcalLeft}</Text>
@@ -114,7 +111,6 @@ export function NutritionDiaryScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* MACROS */}
           <View style={styles.macrosCard}>
             <View style={styles.macroHeaderRow}>
               <MaterialIcons name="analytics" size={16} color="#ec5b13" />
@@ -125,7 +121,6 @@ export function NutritionDiaryScreen({ navigation }: any) {
             <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Fat</Text><Text style={[styles.macroValText, {color: '#f59e0b'}]}>{totals.fat}g / 70g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.fat/70)*100)}%`, backgroundColor: '#f59e0b' }]} /></View></View>
           </View>
 
-          {/* MEALS ACCORDION */}
           <View style={styles.mealsSection}>
             {groupedMeals.length === 0 ? (
               <View style={styles.emptyState}>
@@ -142,25 +137,24 @@ export function NutritionDiaryScreen({ navigation }: any) {
                 if(group.id === 'snack') groupColor = '#f59e0b';
 
                 return (
-                  <TouchableOpacity key={index} style={[styles.mealAccordion, !isOpen && styles.mealAccordionClosed]} activeOpacity={0.8} onPress={() => setOpenMeal(isOpen ? null : group.id)}>
-                    <View style={[styles.mealAccordionHeader, isOpen && { backgroundColor: `${groupColor}15` }]}>
+                  <TouchableOpacity key={index} style={[styles.mealAccordion, !isOpen ? styles.mealAccordionClosed : null]} activeOpacity={0.8} onPress={() => setOpenMeal(isOpen ? null : group.id)}>
+                    <View style={[styles.mealAccordionHeader, isOpen ? { backgroundColor: `${groupColor}15` } : null]}>
                       <View style={styles.mealTitleArea}><MaterialIcons name={group.icon} size={20} color={groupColor} /><Text style={styles.mealTitleText}>{group.name}</Text></View>
-                      <View style={styles.mealScoreArea}><Text style={styles.mealKcalText}>{group.kcal} kcal</Text>{!isOpen && <MaterialIcons name="expand-more" size={20} color="#64748b" />}</View>
+                      <View style={styles.mealScoreArea}><Text style={styles.mealKcalText}>{group.kcal} kcal</Text>{!isOpen ? <MaterialIcons name="expand-more" size={20} color="#64748b" /> : null}</View>
                     </View>
-                    {isOpen && (
+                    {isOpen ? (
                       <View style={styles.mealAccordionContent}>
                         {group.items.map((itemStr: string, idx: number) => (
                           <View key={idx} style={styles.mealItemRow}><View style={styles.mealItemLeft}><MaterialIcons name="restaurant" size={16} color="#64748b" /><Text style={styles.mealItemName}>{itemStr}</Text></View></View>
                         ))}
                       </View>
-                    )}
+                    ) : null}
                   </TouchableOpacity>
                 )
               })
             )}
           </View>
 
-          {/* WARNING & MICROGRID */}
           <View style={styles.alertCard}><View style={styles.alertIconBg}><MaterialIcons name="warning" size={20} color="#ef4444" /></View><View style={{ flex: 1 }}><Text style={styles.alertTitle}>Vitamin D critical</Text><Text style={styles.alertDesc}>Current intake is only 8% of daily target.</Text></View></View>
 
           <View style={styles.microSection}>
@@ -173,7 +167,6 @@ export function NutritionDiaryScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* WATER */}
           <View style={styles.waterSection}>
             <View style={styles.waterHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><MaterialIcons name="water-drop" size={20} color="#3b82f6" /><Text style={styles.sectionTitle}>Water Log</Text></View>
@@ -194,12 +187,9 @@ export function NutritionDiaryScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#221610' },
-  
-  // ESTILOS DA NOVA BARRA DE NAVEGAÇÃO
   appBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   backBtn: { padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12 },
   appBarTitle: { color: '#f8f6f6', fontSize: 16, fontWeight: 'bold' },
-
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
   navBtn: { padding: 8, backgroundColor: 'rgba(236, 91, 19, 0.1)', borderRadius: 20 },
   headerDateCenter: { alignItems: 'center' },
