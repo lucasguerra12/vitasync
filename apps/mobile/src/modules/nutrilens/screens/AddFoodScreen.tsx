@@ -2,19 +2,23 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
+import { useAppSelector } from '../../../store/hooks'; 
 import { useFoodLogger } from '../../../hooks/useFoodLogger';
 
 export function AddFoodScreen({ navigation }: any) {
   const route = useRoute<any>();
   const { food } = route.params || {};
-  const { portion, setPortion, mealType, setMealType, calculatedMacros, isSaving, saveMeal, setSelectedFood } = useFoodLogger();
+  const userId = useAppSelector((state) => state.auth.userId);
+  const { 
+    portion, setPortion, mealType, setMealType, 
+    calculatedMacros, isSaving, saveMeal, setSelectedFood 
+  } = useFoodLogger(userId || 'offline-user');
 
   useEffect(() => { if (food) setSelectedFood(food); }, [food]);
 
   const handleSave = async () => {
     const success = await saveMeal();
     if (success) {
-
       navigation.navigate('Main', { screen: 'NutriLens' });
     }
   };

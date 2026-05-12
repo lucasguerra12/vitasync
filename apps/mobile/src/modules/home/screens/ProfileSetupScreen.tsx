@@ -9,8 +9,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { database } from '../../../database';
 import Profile from '../../../database/models/Profile'; 
-
-// NOVO: Importando o Supabase
 import { supabase } from '../../../services/supabase';
 
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
@@ -66,54 +64,63 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
   const onSubmit = async (data: SetupFormData) => {
     try {
+      // 1. Cria a conta no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       });
+      
       if (authError) throw authError;
       if (!authData.session) {
          throw new Error("Conta criada, mas a sessão falhou. Verifique as configurações de e-mail no Supabase.");
       }
+      
       const userId = authData.user?.id;
       if (!userId) throw new Error("Falha ao obter ID de usuário.");
       const age = calcAge(data.birthDate) || 0; 
       const parsedWeight = parseFloat(data.weight);
-      const parsedHeight = parseFloat(data.height);
+      const parsedHeight = parseFloat(data.height); 
       const dailyCalorieGoal = calcDailyCalories(data.sex as any, parsedWeight, parsedHeight, age, data.activityLevel as any);
+      const dbGender = data.sex === 'Masculino' ? 'male' : data.sex === 'Feminino' ? 'female' : 'other';
 
-      const formattedDate = data.birthDate.split('/').reverse().join('-');
-      const { error: dbError } = await supabase.from('user_profiles').insert([{
+      const { error: dbError } = await supabase.from('profiles').insert([{
         id: userId,
+        user_id: userId,             
         name: data.name,
-        birth_date: formattedDate,
-        sex: data.sex,
-        weight_kg: parsedWeight,
-        height_cm: parsedHeight,
-        activity_level: data.activityLevel,
-        main_goal: data.mainGoal,
-        daily_calorie_goal: dailyCalorieGoal
+        age: age,                    
+        gender: dbGender,            
+        weight: parsedWeight,
+        height: parsedHeight,
+        activity_level: data.activityLevel, // snake_case
+        goal: data.mainGoal,
+        created_at: Date.now(),
+        updated_at: Date.now(),
       }]);
 
       if (dbError) throw dbError;
 
-      // 3. Salva no WatermelonDB (Offline First)
+      // 4. Salva no WatermelonDB (Offline First)
       await database.write(async () => {
         const profilesCollection = database.collections.get<Profile>('profiles');
+        
+        // Remove perfil antigo local se existir
         const oldProfiles = await profilesCollection.query().fetch();
         for (const p of oldProfiles) await p.destroyPermanently();
 
+        // Cria o novo perfil
         await profilesCollection.create((profile: any) => {
+          profile.userId = userId;     // camelCase no WatermelonDB
           profile.name = data.name;
           profile.age = age;
           profile.weight = parsedWeight;
-          profile.height = parsedHeight / 100; 
-          profile.gender = data.sex === 'Masculino' ? 'M' : data.sex === 'Feminino' ? 'F' : 'O';
+          profile.height = parsedHeight; 
+          profile.gender = dbGender;
           profile.activityLevel = data.activityLevel;
           profile.goal = data.mainGoal;
         });
       });
 
-      // 4. Salva no Redux para a sessão atual
+      // 5. Salva no Redux para a sessão atual
       dispatch(setProfile({
         name: data.name,
         birthDate: data.birthDate,

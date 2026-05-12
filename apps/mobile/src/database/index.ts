@@ -3,6 +3,8 @@ import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import schema from './schema';
 import Profile from './models/Profile';
 import Meal from './models/Meal';
+import MealItem from './models/MealItem';
+import WaterLog from './models/WaterLogs';
 
 const adapter = new SQLiteAdapter({
   schema,
@@ -17,5 +19,7 @@ export const database = new Database({
   modelClasses: [
     Profile,
     Meal,
+    MealItem,
+    WaterLog
   ],
 });

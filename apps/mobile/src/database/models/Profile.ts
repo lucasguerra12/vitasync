@@ -2,9 +2,9 @@ import { Model } from '@nozbe/watermelondb';
 import { field, date, readonly } from '@nozbe/watermelondb/decorators';
 
 export default class Profile extends Model {
-  // Esse nome DEVE ser exatamente o nome da tabela que está no seu schema.ts
   static table = 'profiles';
 
+  @field('user_id') userId!: string;
   @field('name') name!: string;
   @field('age') age!: number;
   @field('weight') weight!: number;

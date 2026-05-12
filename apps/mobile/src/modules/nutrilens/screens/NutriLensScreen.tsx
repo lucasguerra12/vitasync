@@ -12,9 +12,15 @@ export function NutriLensScreen({ navigation }: any) {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [reminderInterval, setReminderInterval] = useState(0);
-  const { meals, groupedMeals, totals } = useDailyNutrition();
+  
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
+  
+  // CORREÇÃO: Lendo o userId diretamente da raiz do authSlice
+  const userId = useAppSelector((state) => state.auth.userId);
+
+  // Passamos o userId (ou undefined se for null) para o hook
+  const { meals, groupedMeals, totals } = useDailyNutrition(userId || undefined);
 
   const handleSearch = (text: string) => {
     setSearchTerm(text);
@@ -161,7 +167,6 @@ export function NutriLensScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* AJUSTE: BOTÃO DE RECEITAS INTELIGENTES ADICIONADO AQUI */}
         <TouchableOpacity 
           style={styles.recipeBtn} 
           onPress={() => navigation.navigate('RecipeSuggestions')}
@@ -242,43 +247,9 @@ const styles = StyleSheet.create({
   waterTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
   waterDesc: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
   waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  
-  // ESTILOS DO NOVO BOTÃO DE RECEITAS
-  recipeBtn: {
-    marginTop: 32,
-    marginHorizontal: 24,
-    backgroundColor: '#1E293B',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
-    padding: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  recipeBtnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  recipeIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recipeBtnTitle: {
-    color: '#F1F5F9',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  recipeBtnSubtitle: {
-    color: '#64748B',
-    fontSize: 12,
-    marginTop: 2,
-  },
+  recipeBtn: { marginTop: 32, marginHorizontal: 24, backgroundColor: '#1E293B', borderRadius: 20, borderWidth: 1, borderColor: '#334155', padding: 16, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  recipeBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  recipeIconBg: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
+  recipeBtnTitle: { color: '#F1F5F9', fontSize: 15, fontWeight: 'bold' },
+  recipeBtnSubtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
 });

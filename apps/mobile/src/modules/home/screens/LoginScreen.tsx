@@ -40,9 +40,9 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
       if (!data.user) throw new Error("Falha ao recuperar dados do utilizador.");
 
       const { data: profileData, error: profileError } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('*')
-        .eq('id', data.user.id)
+        .eq('user_id', data.user.id)
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
