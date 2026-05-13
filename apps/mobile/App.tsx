@@ -11,10 +11,18 @@ import { useLightSensor } from './src/sensors/useLightSensor';
 import { useStepCounter } from './src/sensors/useStepCounter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InAppNotification } from './src/components/ui/InAppNotification';
-
-// Removemos a importação bugada do DatabaseProvider!
+import { useEffect, useState } from 'react';
+import { useAppDispatch } from './src/store/hooks';
+import { loginSuccess } from './src/store/slices/authSlice';
+import { setProfile } from './src/store/slices/profileSlice';
+import { supabase } from './src/services/supabase';
+import { database } from './src/database';
+import Profile from './src/database/models/Profile';
 
 function AppContent() {
+  const dispatch = useAppDispatch();
+  const [isRestoringSession, setIsRestoringSession] = useState(true);
+
   const [fontsLoaded] = useFonts({
     PublicSans: PublicSans_400Regular,
     PublicSans_Medium: PublicSans_500Medium,
@@ -30,10 +38,46 @@ function AppContent() {
   useLightSensor();
   useStepCounter();
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          const profilesCollection = database.collections.get<Profile>('profiles');
+          const profiles = await profilesCollection.query().fetch();
+
+          if (profiles.length > 0) {
+            const p = profiles[0];
+            dispatch(setProfile({
+              name: p.name,
+              birthDate: '', 
+              weightKg: p.weight,
+              heightCm: p.height,
+              sex: p.gender as any,
+              activityLevel: p.activityLevel as any,
+              mainGoal: p.goal as any,
+              dailyCalorieGoal: 2100 
+            }));
+          }
+          dispatch(loginSuccess({
+            userId: session.user.id,
+            email: session.user.email || ''
+          }));
+        }
+      } catch (error) {
+        console.error("Erro ao restaurar sessão:", error);
+      } finally {
+        setIsRestoringSession(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+  if (!fontsLoaded || isRestoringSession) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background }}>
-        <ActivityIndicator color={Colors.home} />
+        <ActivityIndicator size="large" color={Colors.home} />
       </View>
     );
   }

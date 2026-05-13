@@ -2,13 +2,17 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   TextInput, SafeAreaView, ScrollView, Alert, ActivityIndicator
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native'; // Importante para o reset da aba
 import { Colors, Typography } from '../../../constants';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAppDispatch } from '../../../store/hooks';
 import { loginSuccess } from '../../../store/slices/authSlice';
 import { setProfile } from '../../../store/slices/profileSlice';
 import { supabase } from '../../../services/supabase';
+import { database } from '../../../database';
+import Profile from '../../../database/models/Profile';
+import { calcDailyCalories } from '../../../utils';
 
 interface Props {
   onLogin: () => void;
@@ -22,6 +26,13 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); 
+
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab('signin');
+    }, [])
+  );
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Atenção', 'Preencha o email e a senha para entrar.');
@@ -46,29 +57,56 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.error("Erro ao buscar perfil:", profileError);
+        throw new Error("Erro ao carregar dados do perfil da nuvem.");
       }
 
       if (profileData) {
+        
+        await database.write(async () => {
+          const profilesCollection = database.collections.get<Profile>('profiles');
+          
+          const oldProfiles = await profilesCollection.query().fetch();
+          for (const p of oldProfiles) await p.destroyPermanently();
+
+          await profilesCollection.create((profile: any) => {
+            profile.userId = data.user.id;
+            profile.email = profileData.email;
+            profile.name = profileData.name;
+            profile.age = profileData.age;
+            profile.weight = profileData.weight;
+            profile.height = profileData.height;
+            profile.gender = profileData.gender;
+            profile.activityLevel = profileData.activity_level;
+            profile.goal = profileData.goal;
+          });
+        });
+
+        const dailyKcal = calcDailyCalories(
+          profileData.gender, 
+          profileData.weight, 
+          profileData.height, 
+          profileData.age, 
+          profileData.activity_level
+        );
+
         dispatch(setProfile({
           name: profileData.name || '',
-          birthDate: profileData.birth_date || '',
-          weightKg: profileData.weight_kg || 0,
-          heightCm: profileData.height_cm || 0,
-          sex: profileData.sex as any,
+          birthDate: '',
+          weightKg: profileData.weight || 0,
+          heightCm: profileData.height || 0,
+          sex: profileData.gender as any,
           activityLevel: profileData.activity_level as any,
-          mainGoal: profileData.main_goal as any,
-          dailyCalorieGoal: profileData.daily_calorie_goal || 2100,
+          mainGoal: profileData.goal as any,
+          dailyCalorieGoal: dailyKcal,
         }));
       }
 
-      // 4. Marcar o usuário como logado
+      // . Marca o usuário como logado
       dispatch(loginSuccess({ 
         userId: data.user.id, 
         email: data.user.email || email 
       }));
-      
-      onLogin();
+            onLogin();
 
     } catch (error: any) {
       Alert.alert('Erro de Acesso', error.message || 'Credenciais inválidas.');

@@ -5,6 +5,7 @@ export default class Profile extends Model {
   static table = 'profiles';
 
   @field('user_id') userId!: string;
+  @field('email') email?: string;
   @field('name') name!: string;
   @field('age') age!: number;
   @field('weight') weight!: number;

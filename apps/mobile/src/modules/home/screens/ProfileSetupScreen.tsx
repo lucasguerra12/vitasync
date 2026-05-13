@@ -85,13 +85,14 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
       const { error: dbError } = await supabase.from('profiles').insert([{
         id: userId,
-        user_id: userId,             
+        user_id: userId,  
+        email: data.email,           
         name: data.name,
         age: age,                    
         gender: dbGender,            
         weight: parsedWeight,
         height: parsedHeight,
-        activity_level: data.activityLevel, // snake_case
+        activity_level: data.activityLevel, 
         goal: data.mainGoal,
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -99,17 +100,15 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
 
       if (dbError) throw dbError;
 
-      // 4. Salva no WatermelonDB (Offline First)
       await database.write(async () => {
         const profilesCollection = database.collections.get<Profile>('profiles');
         
-        // Remove perfil antigo local se existir
         const oldProfiles = await profilesCollection.query().fetch();
         for (const p of oldProfiles) await p.destroyPermanently();
 
-        // Cria o novo perfil
         await profilesCollection.create((profile: any) => {
-          profile.userId = userId;     // camelCase no WatermelonDB
+          profile.userId = userId;   
+          profile.email = data.email;  
           profile.name = data.name;
           profile.age = age;
           profile.weight = parsedWeight;
