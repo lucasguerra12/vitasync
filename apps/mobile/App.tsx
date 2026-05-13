@@ -16,8 +16,6 @@ import { useAppDispatch } from './src/store/hooks';
 import { loginSuccess } from './src/store/slices/authSlice';
 import { setProfile } from './src/store/slices/profileSlice';
 import { supabase } from './src/services/supabase';
-import { database } from './src/database';
-import Profile from './src/database/models/Profile';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -44,19 +42,21 @@ function AppContent() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
-          const profilesCollection = database.collections.get<Profile>('profiles');
-          const profiles = await profilesCollection.query().fetch();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
 
-          if (profiles.length > 0) {
-            const p = profiles[0];
+          if (profile) {
             dispatch(setProfile({
-              name: p.name,
+              name: profile.name,
               birthDate: '', 
-              weightKg: p.weight,
-              heightCm: p.height,
-              sex: p.gender as any,
-              activityLevel: p.activityLevel as any,
-              mainGoal: p.goal as any,
+              weightKg: profile.weight,
+              heightCm: profile.height,
+              sex: profile.gender as any,
+              activityLevel: profile.activity_level as any,
+              mainGoal: profile.goal as any,
               dailyCalorieGoal: 2100 
             }));
           }

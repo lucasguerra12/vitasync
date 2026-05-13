@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { format } from 'date-fns';
 import { TacoService } from '../../../services/TacoService';
 import { useDailyNutrition } from '../hooks/useDailyNutrition';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { addWater } from '../../../store/slices/profileSlice';
 import { NotificationService } from '../../../services/NotificationService';
+import { supabase } from '../../../services/supabase';
 
 export function NutriLensScreen({ navigation }: any) {
   const [activeTab, setActiveTab] = useState<'Camera' | 'Manual'>('Camera');
@@ -13,14 +15,12 @@ export function NutriLensScreen({ navigation }: any) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [reminderInterval, setReminderInterval] = useState(0);
   
-  const dispatch = useAppDispatch();
-  const profile = useAppSelector((state) => state.profile);
-  
-  // CORREÇÃO: Lendo o userId diretamente da raiz do authSlice
   const userId = useAppSelector((state) => state.auth.userId);
+  const profile = useAppSelector((state) => state.profile);
+  const dispatch = useAppDispatch();
 
-  // Passamos o userId (ou undefined se for null) para o hook
-  const { meals, groupedMeals, totals } = useDailyNutrition(userId || undefined);
+  // Hook que agora lê do Supabase
+  const { groupedMeals, totals } = useDailyNutrition(userId || undefined);
 
   const handleSearch = (text: string) => {
     setSearchTerm(text);
@@ -31,6 +31,28 @@ export function NutriLensScreen({ navigation }: any) {
   const handleSetReminder = (min: number) => {
     setReminderInterval(min);
     NotificationService.scheduleWaterReminder(min);
+  };
+
+  const handleAddWater = async (amount: number) => {
+    if (!userId) return;
+    
+    try {
+      const now = new Date();
+      const { error } = await supabase.from('water_logs').insert([{
+        user_id: userId,
+        amount_ml: amount,
+        date: format(now, 'yyyy-MM-dd'),
+        logged_at: now.getTime(),
+        created_at: now.getTime(),
+        updated_at: now.getTime(),
+      }]);
+
+      if (!error) {
+         dispatch(addWater(amount)); // Atualiza o Redux local para feedback imediato
+      }
+    } catch (err) {
+      console.error("Erro ao salvar água no Supabase:", err);
+    }
   };
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
@@ -53,8 +75,7 @@ export function NutriLensScreen({ navigation }: any) {
       <View style={styles.toggleContainer}>
         <View style={styles.toggleTrack}>
           <TouchableOpacity style={[styles.toggleBtn, activeTab === 'Camera' && styles.toggleBtnActive]} onPress={() => setActiveTab('Camera')}>
-            {activeTab === 'Camera' && <MaterialIcons name="photo-camera" size={16} color="#FFF" style={{ marginRight: 6 }} />}
-            <Text style={[styles.toggleText, activeTab === 'Camera' && styles.toggleTextActive]}>Camera</Text>
+            <Text style={[styles.toggleText, activeTab === 'Camera' && styles.toggleTextActive]}>Câmera</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.toggleBtn, activeTab === 'Manual' && styles.toggleBtnActive]} onPress={() => setActiveTab('Manual')}>
             <Text style={[styles.toggleText, activeTab === 'Manual' && styles.toggleTextActive]}>Manual</Text>
@@ -62,49 +83,19 @@ export function NutriLensScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
         
-        {activeTab === 'Camera' && (
-          <View>
-            <View style={styles.cameraSection}>
-              <View style={styles.cameraViewport}>
-                <View style={[styles.corner, { top: 16, left: 16, borderTopWidth: 2, borderLeftWidth: 2 }]} />
-                <View style={[styles.corner, { top: 16, right: 16, borderTopWidth: 2, borderRightWidth: 2 }]} />
-                <View style={[styles.corner, { bottom: 16, left: 16, borderBottomWidth: 2, borderLeftWidth: 2 }]} />
-                <View style={[styles.corner, { bottom: 16, right: 16, borderBottomWidth: 2, borderRightWidth: 2 }]} />
-                <Text style={styles.viewportTitle}>Point at your meal</Text>
-                <Text style={styles.viewportSubtitle}>Align food within the frame</Text>
-              </View>
-              <TouchableOpacity style={styles.identifyBtn} onPress={() => navigation.navigate('Camera')}>
-                <MaterialIcons name="center-focus-strong" size={20} color="#FFF" />
-                <Text style={styles.identifyBtnText}>Identify Food</Text>
-              </TouchableOpacity>
-            </View>
-
-            {meals.length > 0 && (
-              <View style={styles.recentSection}>
-                <Text style={styles.sectionLabel}>RECENT SCANS</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                  {meals.slice(0, 5).map((meal, idx) => (
-                    <View key={idx} style={styles.recentPill}><View style={styles.pillDot} /><Text style={styles.pillText}>{meal.name}</Text></View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </View>
-        )}
-
         {activeTab === 'Manual' && (
           <View style={styles.manualSection}>
             <View style={styles.searchBox}>
               <MaterialIcons name="search" size={24} color="#64748B" />
-              <TextInput style={styles.searchInput} placeholder="Search food in TACO..." placeholderTextColor="#64748B" value={searchTerm} onChangeText={handleSearch} />
+              <TextInput style={styles.searchInput} placeholder="Pesquisar alimento..." placeholderTextColor="#64748B" value={searchTerm} onChangeText={handleSearch} />
             </View>
             {searchResults.map((item) => (
               <TouchableOpacity key={item.id} style={styles.foodResultItem} onPress={() => navigation.navigate('AddFood', { food: item })}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.foodResultName}>{item.name}</Text>
-                  <Text style={{ color: '#94A3B8', fontSize: 12, marginTop: 4 }}>{item.calories} kcal • {item.protein}g Prot • {item.carbs}g Carb</Text>
+                  <Text style={{ color: '#94A3B8', fontSize: 12 }}>{item.calories} kcal • {item.protein}g P • {item.carbs}g C</Text>
                 </View>
                 <MaterialIcons name="add-circle" size={24} color="#10B981" />
               </TouchableOpacity>
@@ -114,76 +105,45 @@ export function NutriLensScreen({ navigation }: any) {
 
         <View style={styles.macrosSection}>
           <View style={styles.macrosCard}>
-            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#3B82F6' }]}><Text style={styles.macroPercent}>{percCarbs}%</Text></View><Text style={styles.macroLabel}>CARBS</Text><Text style={styles.macroGrams}>{totals.carbs}g</Text></View>
-            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#F97316' }]}><Text style={styles.macroPercent}>{percProt}%</Text></View><Text style={styles.macroLabel}>PROTEIN</Text><Text style={styles.macroGrams}>{totals.protein}g</Text></View>
-            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#EAB308' }]}><Text style={styles.macroPercent}>{percFat}%</Text></View><Text style={styles.macroLabel}>FAT</Text><Text style={styles.macroGrams}>{totals.fat}g</Text></View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#3B82F6' }]}><Text style={styles.macroPercent}>{percCarbs}%</Text></View><Text style={styles.macroLabel}>CARBO</Text></View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#F97316' }]}><Text style={styles.macroPercent}>{percProt}%</Text></View><Text style={styles.macroLabel}>PROT</Text></View>
+            <View style={styles.macroCol}><View style={[styles.macroCircle, { borderColor: '#EAB308' }]}><Text style={styles.macroPercent}>{percFat}%</Text></View><Text style={styles.macroLabel}>GORD</Text></View>
           </View>
         </View>
 
         <View style={styles.mealsSection}>
-          <View style={styles.mealsHeader}>
-            <Text style={styles.mealsTitle}>Today's meals</Text>
-            <View style={styles.totalKcalBadge}><Text style={styles.totalKcalText}>{totals.calories} kcal</Text></View>
-          </View>
+          <Text style={styles.mealsTitle}>Refeições de Hoje</Text>
           {groupedMeals.length === 0 ? (
-            <Text style={{ color: '#64748B', textAlign: 'center', marginVertical: 20 }}>No meals logged today.</Text>
+            <Text style={styles.emptyText}>Nenhuma refeição registrada hoje.</Text>
           ) : (
-            groupedMeals.map((group, index) => (
-              <View key={index} style={styles.mealCard}>
-                <View style={styles.mealCardLeft}>
-                  <View style={styles.mealImgPlaceholder}><MaterialIcons name={group.icon} size={24} color="#94A3B8" /></View>
-                  <View style={{ width: 200 }}><Text style={styles.mealName} numberOfLines={1}>{group.name}</Text><Text style={styles.mealDesc} numberOfLines={2}>{group.description}</Text></View>
+            groupedMeals.map((group, idx) => (
+              <View key={idx} style={styles.mealCard}>
+                <View>
+                  <Text style={styles.mealName}>{group.name}</Text>
+                  <Text style={styles.mealDesc}>{group.description}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}><Text style={styles.mealKcalValue}>{group.kcal}</Text><Text style={styles.mealKcalLabel}>KCAL</Text></View>
+                <Text style={styles.mealKcal}>{group.kcal} kcal</Text>
               </View>
             ))
           )}
         </View>
 
         <View style={styles.waterSection}>
-          <View style={styles.reminderOptions}>
-            <Text style={{color: '#94A3B8', fontSize: 10, fontWeight: 'bold', letterSpacing: 1}}>LEMBRETE:</Text>
-            {[30, 40, 60].map(min => (
-              <TouchableOpacity key={min} onPress={() => handleSetReminder(min)}>
-                <Text style={{color: reminderInterval === min ? '#10B981' : '#64748B', marginLeft: 12, fontWeight: 'bold'}}>{min}m</Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity onPress={() => handleSetReminder(0)}>
-              <Text style={{color: reminderInterval === 0 ? '#EF4444' : '#64748B', marginLeft: 12, fontWeight: 'bold'}}>OFF</Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.waterCard}>
-            <View style={styles.waterLeft}>
-              <View style={styles.waterIconBg}><MaterialIcons name="water-drop" size={20} color="#FFF" /></View>
-              <View>
-                <Text style={styles.waterTitle}>Hydration</Text>
-                <Text style={styles.waterDesc}>{(profile.currentWaterMl / 1000).toFixed(2)} L logged</Text>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <MaterialIcons name="water-drop" size={24} color="#3B82F6" />
+              <View style={{marginLeft: 12}}>
+                <Text style={styles.waterTitle}>Hidratação</Text>
+                <Text style={styles.waterDesc}>{(profile.currentWaterMl / 1000).toFixed(2)} L registrados</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.waterBtn} onPress={() => dispatch(addWater(500))}>
-              <Text style={{color: '#FFF', fontWeight: 'bold'}}>+500ml</Text>
+            <TouchableOpacity style={styles.waterBtn} onPress={() => handleAddWater(500)}>
+              <Text style={styles.waterBtnText}>+500ml</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.recipeBtn} 
-          onPress={() => navigation.navigate('RecipeSuggestions')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.recipeBtnContent}>
-            <View style={styles.recipeIconBg}>
-              <MaterialIcons name="restaurant-menu" size={24} color="#FFF" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.recipeBtnTitle}>Explorar Receitas Inteligentes</Text>
-              <Text style={styles.recipeBtnSubtitle}>Sugestões baseadas no seu dia</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#10B981" />
-          </View>
-        </TouchableOpacity>
-
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -191,65 +151,39 @@ export function NutriLensScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F172A' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 24, paddingVertical: 20 },
-  title: { color: '#F1F5F9', fontSize: 24, fontWeight: 'bold' },
-  subtitle: { color: '#94A3B8', fontSize: 13, marginTop: 2 },
-  historyBtn: { width: 40, height: 40, backgroundColor: '#263347', borderRadius: 12, borderWidth: 1, borderColor: '#334155', alignItems: 'center', justifyContent: 'center' },
-  toggleContainer: { paddingHorizontal: 24, paddingBottom: 16 },
-  toggleTrack: { flexDirection: 'row', height: 52, backgroundColor: '#263347', borderRadius: 12, padding: 4, borderWidth: 1, borderColor: '#334155' },
-  toggleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
-  toggleBtnActive: { backgroundColor: '#10B981', elevation: 5 },
-  toggleText: { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
-  toggleTextActive: { color: '#FFF', fontWeight: 'bold' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 24 },
+  title: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
+  subtitle: { color: '#94A3B8', fontSize: 13 },
+  historyBtn: { width: 44, height: 44, backgroundColor: '#1E293B', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  toggleContainer: { paddingHorizontal: 24 },
+  toggleTrack: { flexDirection: 'row', backgroundColor: '#1E293B', borderRadius: 12, padding: 4 },
+  toggleBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 8 },
+  toggleBtnActive: { backgroundColor: '#10B981' },
+  toggleText: { color: '#94A3B8', fontWeight: '600' },
+  toggleTextActive: { color: '#FFF' },
   scrollArea: { flex: 1 },
-  cameraSection: { paddingHorizontal: 24, paddingTop: 8 },
-  cameraViewport: { height: 240, backgroundColor: '#1E293B', borderRadius: 16, borderWidth: 2, borderColor: 'rgba(16, 185, 129, 0.4)', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
-  corner: { position: 'absolute', width: 24, height: 24, borderColor: '#10B981' },
-  viewportTitle: { color: '#F1F5F9', fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  viewportSubtitle: { color: '#94A3B8', fontSize: 12 },
-  identifyBtn: { marginTop: 16, backgroundColor: '#10B981', height: 56, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  identifyBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
-  recentSection: { marginTop: 24 },
-  sectionLabel: { paddingHorizontal: 24, fontSize: 11, fontWeight: 'bold', color: '#94A3B8', letterSpacing: 1, marginBottom: 12 },
-  horizontalScroll: { paddingHorizontal: 24, gap: 12 },
-  recentPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#263347', borderWidth: 1, borderColor: '#334155', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginRight: 12 },
-  pillDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981', marginRight: 8 },
-  pillText: { color: '#F1F5F9', fontSize: 12, fontWeight: '500' },
-  manualSection: { paddingHorizontal: 24, paddingTop: 8 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1E293B', padding: 15, borderRadius: 12, marginBottom: 20 },
-  searchInput: { flex: 1, color: '#fff', marginLeft: 10, fontSize: 16 },
-  foodResultItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#1E293B', borderRadius: 10, marginBottom: 10, borderLeftWidth: 4, borderLeftColor: '#3B82F6' },
-  foodResultName: { color: '#F1F5F9', fontSize: 16, fontWeight: 'bold' },
-  macrosSection: { paddingHorizontal: 24, marginTop: 32 },
-  macrosCard: { backgroundColor: '#1E293B', borderRadius: 16, borderWidth: 1, borderColor: '#334155', padding: 20, flexDirection: 'row', justifyContent: 'space-between' },
-  macroCol: { alignItems: 'center', flex: 1 },
-  macroCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 3, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  macroPercent: { color: '#F1F5F9', fontSize: 10, fontWeight: 'bold' },
-  macroLabel: { color: '#94A3B8', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
-  macroGrams: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold', marginTop: 2 },
-  mealsSection: { paddingHorizontal: 24, marginTop: 32 },
-  mealsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  mealsTitle: { color: '#F1F5F9', fontSize: 18, fontWeight: 'bold' },
-  totalKcalBadge: { backgroundColor: 'rgba(16, 185, 129, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  totalKcalText: { color: '#10B981', fontSize: 11, fontWeight: 'bold' },
-  mealCard: { backgroundColor: '#1E293B', borderLeftWidth: 4, borderLeftColor: '#10B981', borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  mealCardLeft: { flexDirection: 'row', alignItems: 'center' },
-  mealImgPlaceholder: { width: 48, height: 48, borderRadius: 8, backgroundColor: '#263347', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  mealName: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
-  mealDesc: { color: '#94A3B8', fontSize: 12, marginTop: 2 },
-  mealKcalValue: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
-  mealKcalLabel: { color: '#94A3B8', fontSize: 10, fontWeight: 'bold' },
-  waterSection: { paddingHorizontal: 24, marginTop: 32 },
-  reminderOptions: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginLeft: 4 },
-  waterCard: { backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  waterLeft: { flexDirection: 'row', alignItems: 'center' },
-  waterIconBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  waterTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: 'bold' },
-  waterDesc: { color: '#60A5FA', fontSize: 12, marginTop: 2 },
-  waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  recipeBtn: { marginTop: 32, marginHorizontal: 24, backgroundColor: '#1E293B', borderRadius: 20, borderWidth: 1, borderColor: '#334155', padding: 16, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
-  recipeBtnContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  recipeIconBg: { width: 48, height: 48, borderRadius: 14, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center' },
-  recipeBtnTitle: { color: '#F1F5F9', fontSize: 15, fontWeight: 'bold' },
-  recipeBtnSubtitle: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  manualSection: { padding: 24 },
+  searchBox: { flexDirection: 'row', backgroundColor: '#1E293B', padding: 14, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
+  searchInput: { flex: 1, color: '#FFF', marginLeft: 10 },
+  foodResultItem: { flexDirection: 'row', backgroundColor: '#1E293B', padding: 16, borderRadius: 12, marginBottom: 8, alignItems: 'center' },
+  foodResultName: { color: '#FFF', fontWeight: 'bold' },
+  macrosSection: { paddingHorizontal: 24, marginTop: 16 },
+  macrosCard: { flexDirection: 'row', backgroundColor: '#1E293B', padding: 20, borderRadius: 16, justifyContent: 'space-between' },
+  macroCol: { alignItems: 'center' },
+  macroCircle: { width: 50, height: 50, borderRadius: 25, borderWidth: 3, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  macroPercent: { color: '#FFF', fontSize: 12, fontWeight: 'bold' },
+  macroLabel: { color: '#94A3B8', fontSize: 10 },
+  mealsSection: { padding: 24 },
+  mealsTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  emptyText: { color: '#64748B', textAlign: 'center' },
+  mealCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#1E293B', padding: 16, borderRadius: 12, marginBottom: 12, alignItems: 'center' },
+  mealName: { color: '#FFF', fontWeight: 'bold' },
+  mealDesc: { color: '#94A3B8', fontSize: 12 },
+  mealKcal: { color: '#10B981', fontWeight: 'bold' },
+  waterSection: { paddingHorizontal: 24 },
+  waterCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: 16, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.2)' },
+  waterTitle: { color: '#FFF', fontWeight: 'bold' },
+  waterDesc: { color: '#3B82F6', fontSize: 12 },
+  waterBtn: { backgroundColor: '#3B82F6', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
+  waterBtnText: { color: '#FFF', fontWeight: 'bold' }
 });

@@ -10,8 +10,6 @@ import { useAppDispatch } from '../../../store/hooks';
 import { loginSuccess } from '../../../store/slices/authSlice';
 import { setProfile } from '../../../store/slices/profileSlice';
 import { supabase } from '../../../services/supabase';
-import { database } from '../../../database';
-import Profile from '../../../database/models/Profile';
 import { calcDailyCalories } from '../../../utils';
 
 interface Props {
@@ -61,25 +59,6 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
       }
 
       if (profileData) {
-        
-        await database.write(async () => {
-          const profilesCollection = database.collections.get<Profile>('profiles');
-          
-          const oldProfiles = await profilesCollection.query().fetch();
-          for (const p of oldProfiles) await p.destroyPermanently();
-
-          await profilesCollection.create((profile: any) => {
-            profile.userId = data.user.id;
-            profile.email = profileData.email;
-            profile.name = profileData.name;
-            profile.age = profileData.age;
-            profile.weight = profileData.weight;
-            profile.height = profileData.height;
-            profile.gender = profileData.gender;
-            profile.activityLevel = profileData.activity_level;
-            profile.goal = profileData.goal;
-          });
-        });
 
         const dailyKcal = calcDailyCalories(
           profileData.gender, 
