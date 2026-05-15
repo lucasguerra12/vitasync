@@ -13,9 +13,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InAppNotification } from './src/components/ui/InAppNotification';
 import { useEffect, useState } from 'react';
 import { useAppDispatch } from './src/store/hooks';
-import { loginSuccess } from './src/store/slices/authSlice';
+import { loginSuccess, logout } from './src/store/slices/authSlice';
 import { setProfile } from './src/store/slices/profileSlice';
 import { supabase } from './src/services/supabase';
+import { calcDailyCalories } from './src/utils'; 
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -37,43 +38,66 @@ function AppContent() {
   useStepCounter();
 
   useEffect(() => {
-    const restoreSession = async () => {
+    // 1. Função para carregar o perfil completo do banco
+    const loadUserProfile = async (session: any) => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
 
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
+        if (profile) {
+          const dailyKcal = calcDailyCalories(
+            profile.gender, profile.weight, profile.height, profile.age, profile.activity_level
+          );
 
-          if (profile) {
-            dispatch(setProfile({
-              name: profile.name,
-              birthDate: '', 
-              weightKg: profile.weight,
-              heightCm: profile.height,
-              sex: profile.gender as any,
-              activityLevel: profile.activity_level as any,
-              mainGoal: profile.goal as any,
-              dailyCalorieGoal: 2100 
-            }));
-          }
+          dispatch(setProfile({
+            name: profile.name || '',
+            birthDate: '', 
+            weightKg: profile.weight || 0,
+            heightCm: profile.height || 0,
+            sex: profile.gender as any,
+            activityLevel: profile.activity_level as any,
+            mainGoal: profile.goal as any,
+            dailyCalorieGoal: dailyKcal // Agora é dinâmico!
+          }));
+
           dispatch(loginSuccess({
             userId: session.user.id,
             email: session.user.email || ''
           }));
+        } else {
+          // Se logou mas não tem perfil, desloga por segurança (Rollback prático)
+          await supabase.auth.signOut();
+          dispatch(logout());
         }
       } catch (error) {
-        console.error("Erro ao restaurar sessão:", error);
-      } finally {
-        setIsRestoringSession(false);
+        console.error("Erro ao carregar perfil:", error);
       }
     };
 
-    restoreSession();
+    // 2. Restaura a sessão ao abrir o App
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        loadUserProfile(session).finally(() => setIsRestoringSession(false));
+      } else {
+        setIsRestoringSession(false);
+      }
+    });
+
+    // 3. Listener Global (Escuta logins e logouts em tempo real)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        loadUserProfile(session);
+      } else {
+        dispatch(logout());
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
   if (!fontsLoaded || isRestoringSession) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background }}>

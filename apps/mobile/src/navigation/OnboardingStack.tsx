@@ -3,9 +3,6 @@ import { useNavigation } from '@react-navigation/native';
 import OnboardingScreen from '../modules/home/screens/OnboardingScreen';
 import ProfileSetupScreen from '../modules/home/screens/ProfileSetupScreen';
 import LoginScreen from '../modules/home/screens/LoginScreen';
-import { useAppDispatch } from '../store/hooks';
-import { loginSuccess } from '../store/slices/authSlice';
-
 
 const Stack = createStackNavigator();
 
@@ -20,7 +17,8 @@ function LoginWrapper() {
   const navigation = useNavigation<any>();
   return (
     <LoginScreen
-      onLogin={() => {}}
+      onLogin={() => {
+      }}
       onCreateAccount={() => navigation.navigate('ProfileSetup')}
     />
   );
@@ -28,14 +26,12 @@ function LoginWrapper() {
 
 function ProfileSetupWrapper() {
   const navigation = useNavigation<any>();
-  const dispatch = useAppDispatch();
 
   return (
     <ProfileSetupScreen 
-    onContinue={() => {
-      dispatch(loginSuccess({userId: '1', email:'novo@vitasync.app'}));
-    }}
-    onBack={() => navigation.goBack()}
+      onContinue={() => {
+      }}
+      onBack={() => navigation.goBack()}
     />
   )
 }

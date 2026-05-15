@@ -69,18 +69,16 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
         password: data.password,
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Falha ao criar utilizador.");
+      if (authError) throw new Error(authError.message);
+      if (!authData.user) throw new Error("Falha ao criar utilizador no sistema.");
 
       const userId = authData.user.id;
       const age = calcAge(data.birthDate) || 0; 
       const parsedWeight = parseFloat(data.weight);
       const parsedHeight = parseFloat(data.height);
       const dailyCalorieGoal = calcDailyCalories(data.sex as any, parsedWeight, parsedHeight, age, data.activityLevel as any);
-      
       const dbGender = data.sex === 'Masculino' ? 'male' : data.sex === 'Feminino' ? 'female' : 'other';
 
-      // 2. Salvar Perfil no Supabase (Remoto)
       const { error: dbError } = await supabase.from('profiles').insert([{
         user_id: userId,
         name: data.name,
@@ -96,27 +94,20 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
         updated_at: Date.now(),
       }]);
 
-      if (dbError) throw dbError;
-
-      // 3. Atualizar Redux
-      dispatch(setProfile({
-        name: data.name,
-        birthDate: data.birthDate,
-        weightKg: parsedWeight,
-        heightCm: parsedHeight,
-        sex: data.sex as any,
-        activityLevel: data.activityLevel as any,
-        mainGoal: data.mainGoal as any,
-        dailyCalorieGoal: Math.round(dailyCalorieGoal)
-      }));
-
-      dispatch(loginSuccess({ userId, email: data.email }));
+      if (dbError) {
+        await supabase.auth.signOut(); // Desloga imediatamente
+        throw new Error("Erro ao salvar dados do perfil. A sua conexão pode ter caído. Tente novamente.");
+      }
 
       Alert.alert("Sucesso!", "Conta criada com sucesso!");
       onContinue();
 
     } catch (error: any) {
-      Alert.alert('Erro ao criar conta', error.message);
+      if (error.message.includes('Network')) {
+        Alert.alert('EI! PARECE QUE VOCÊ ESTÁ OFFLINE.', 'Verifique sua conexão e tente novamente.');
+      } else {
+        Alert.alert('Erro ao criar conta', error.message);
+      }
     }
   };
 

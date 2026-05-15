@@ -45,50 +45,20 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
         password,
       });
 
-      if (error) throw error;
+      if (error) throw new Error("Credenciais inválidas ou conta não existe.");
       if (!data.user) throw new Error("Falha ao recuperar dados do utilizador.");
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw new Error("Erro ao carregar dados do perfil da nuvem.");
-      }
-
-      if (profileData) {
-
-        const dailyKcal = calcDailyCalories(
-          profileData.gender, 
-          profileData.weight, 
-          profileData.height, 
-          profileData.age, 
-          profileData.activity_level
-        );
-
-        dispatch(setProfile({
-          name: profileData.name || '',
-          birthDate: '',
-          weightKg: profileData.weight || 0,
-          heightCm: profileData.height || 0,
-          sex: profileData.gender as any,
-          activityLevel: profileData.activity_level as any,
-          mainGoal: profileData.goal as any,
-          dailyCalorieGoal: dailyKcal,
-        }));
-      }
-
-      // . Marca o usuário como logado
-      dispatch(loginSuccess({ 
-        userId: data.user.id, 
-        email: data.user.email || email 
-      }));
-            onLogin();
+      // A partir daqui, NÃO precisamos dar dispatch manual!
+      // O App.tsx está rodando o "onAuthStateChange", e assim que o Supabase avisar que logou, 
+      // o próprio App.tsx vai buscar o perfil e jogar para a tela principal!
+      onLogin();
 
     } catch (error: any) {
-      Alert.alert('Erro de Acesso', error.message || 'Credenciais inválidas.');
+      if (error.message?.includes('Network') || error.message?.includes('fetch')) {
+         Alert.alert('EI! PARECE QUE VOCÊ ESTÁ OFFLINE.', 'Conecte-se à internet para entrar.');
+      } else {
+         Alert.alert('Erro de Acesso', error.message);
+      }
     } finally {
       setIsLoading(false);
     }
