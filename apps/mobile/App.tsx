@@ -7,21 +7,10 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-googl
 import { DMMono_400Regular, DMMono_500Medium } from '@expo-google-fonts/dm-mono';
 import { View, ActivityIndicator } from 'react-native';
 import { Colors } from './src/constants';
-import { useLightSensor } from './src/sensors/useLightSensor';
-import { useStepCounter } from './src/sensors/useStepCounter';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { InAppNotification } from './src/components/ui/InAppNotification';
-import { useEffect, useState } from 'react';
-import { useAppDispatch } from './src/store/hooks';
-import { loginSuccess, logout } from './src/store/slices/authSlice';
-import { setProfile } from './src/store/slices/profileSlice';
-import { supabase } from './src/services/supabase';
-import { calcDailyCalories } from './src/utils'; 
 
 function AppContent() {
-  const dispatch = useAppDispatch();
-  const [isRestoringSession, setIsRestoringSession] = useState(true);
-
   const [fontsLoaded] = useFonts({
     PublicSans: PublicSans_400Regular,
     PublicSans_Medium: PublicSans_500Medium,
@@ -34,67 +23,7 @@ function AppContent() {
     DMMono_Medium: DMMono_500Medium,
   });
 
-  useLightSensor();
-  useStepCounter();
-
-  useEffect(() => {
-    const loadUserProfile = async (session: any, isBoot: boolean = false) => {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-
-        if (profile) {
-          const dailyKcal = calcDailyCalories(
-            profile.gender, profile.weight, profile.height, profile.age, profile.activity_level
-          );
-
-          dispatch(setProfile({
-            name: profile.name || '',
-            birthDate: '', 
-            weightKg: profile.weight || 0,
-            heightCm: profile.height || 0,
-            sex: profile.gender as any,
-            activityLevel: profile.activity_level as any,
-            mainGoal: profile.goal as any,
-            dailyCalorieGoal: dailyKcal
-          }));
-
-          dispatch(loginSuccess({
-            userId: session.user.id,
-            email: session.user.email || ''
-          }));
-        } else if (isBoot) {
-          await supabase.auth.signOut();
-          dispatch(logout());
-        }
-      } catch (error) {
-        console.error("Erro ao carregar perfil:", error);
-      }
-    };
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        loadUserProfile(session, true).finally(() => setIsRestoringSession(false));
-      } else {
-        setIsRestoringSession(false);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        loadUserProfile(session, false);
-      } else {
-        dispatch(logout());
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [dispatch]);
-
-  if (!fontsLoaded || isRestoringSession) {
+  if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.dark.background }}>
         <ActivityIndicator size="large" color={Colors.home} />

@@ -3,7 +3,7 @@ import {
   TextInput, SafeAreaView, Alert, ActivityIndicator 
 } from 'react-native';
 import { useState } from 'react';
-import { Colors } from '../../../constants';
+import { Colors, Typography } from '../../../constants';
 import { useAppDispatch } from '../../../store/hooks';
 import { setProfile } from '../../../store/slices/profileSlice';
 import { loginSuccess } from '../../../store/slices/authSlice';
@@ -11,7 +11,9 @@ import { calcAge, calcDailyCalories } from '../../../utils';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod'; 
-import { supabase } from '../../../services/supabase';
+
+// 🚨 IMPORTAMOS O NOSSO MOTOR DE AUTENTICAÇÃO LIMPO
+import { AuthService } from '../../../services/authService';
 
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
 
@@ -28,14 +30,15 @@ const GOAL_OPTIONS = [
   { value: 'reduce_stress', label: 'Reduzir estresse', emoji: '🧘', color: Colors.mindzen },
 ] as const;
 
+// Esquema de validação rígido com Zod
 const setupFormSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(8, "A senha deve ter no mínimo 8 caracteres"),
   confirmPassword: z.string(),
   name: z.string().min(2, "O nome é obrigatório"),
   birthDate: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/, "Use o formato DD/MM/AAAA"),
-  weight: z.string().min(1, "O peso é obrigatório").refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Peso inválido"),
-  height: z.string().min(1, "A altura é obrigatória").refine((val: string) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Altura inválida"),
+  weight: z.string().min(1, "O peso é obrigatório").refine((val: string) => !isNaN(parseFloat(val.replace(',', '.'))) && parseFloat(val.replace(',', '.')) > 0, "Peso inválido"),
+  height: z.string().min(1, "A altura é obrigatória").refine((val: string) => !isNaN(parseFloat(val.replace(',', '.'))) && parseFloat(val.replace(',', '.')) > 0, "Altura inválida"),
   sex: z.string().min(1, "Selecione uma opção"),
   activityLevel: z.string().min(1, "Selecione uma opção"),
   mainGoal: z.string().min(1, "Selecione uma opção"),
@@ -61,85 +64,88 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
     defaultValues: { email: '', password: '', confirmPassword: '', name: '', birthDate: '', weight: '', height: '', sex: '', activityLevel: '', mainGoal: '' }
   });
 
+  /**
+   * Executa o fluxo de envio dos dados para o AuthService
+   */
   const onSubmit = async (data: SetupFormData) => {
-    setIsSubmitting(true); 
+    setIsSubmitting(true);
+    console.log("📱 [REGISTRO UI] -> Formulário validado. Tratando dados...");
 
     try {
-      // 1. Criar Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (authError) throw new Error(authError.message);
-      if (!authData.user) throw new Error("Falha ao criar utilizador no sistema.");
-
-      // 2. Preparar Dados
-      const userId = authData.user.id;
+      // 1. Cálculos matemáticos locais de saúde
       const age = calcAge(data.birthDate) || 0; 
       const parsedWeight = parseFloat(data.weight.replace(',', '.')); 
       const parsedHeight = parseFloat(data.height.replace(',', '.'));
       const dailyCalorieGoal = calcDailyCalories(data.sex as any, parsedWeight, parsedHeight, age, data.activityLevel as any);
       const dbGender = data.sex === 'Masculino' ? 'male' : data.sex === 'Feminino' ? 'female' : 'other';
 
-      // 3. Salvar no Banco (Usando Date.now() para respeitar o tipo BIGINT do seu banco)
-      const { error: dbError } = await supabase.from('profiles').insert([{
-        user_id: userId,
+      // 2. Monta o payload padronizado que o banco espera
+      const profilePayload = {
+        email: data.email.trim(),
+        password: data.password,
         name: data.name,
-        email: data.email,
-        age: age,
+        age,
         gender: dbGender,
         weight: parsedWeight,
         height: parsedHeight,
-        activity_level: data.activityLevel,
-        goal: data.mainGoal,
-        daily_calorie_goal: Math.round(dailyCalorieGoal),
-        created_at: Date.now(), 
-        updated_at: Date.now(),
-      }]);
-
-      if (dbError) {
-        await supabase.auth.signOut();
-        throw new Error("Erro ao salvar dados do perfil: " + dbError.message);
-      }
-
-      // 4. Sucesso! Atualiza rotas
-      dispatch(setProfile({
-        name: data.name, birthDate: data.birthDate, weightKg: parsedWeight, heightCm: parsedHeight,
-        sex: dbGender as any, activityLevel: data.activityLevel as any, mainGoal: data.mainGoal as any,
+        activityLevel: data.activityLevel,
+        mainGoal: data.mainGoal,
         dailyCalorieGoal: Math.round(dailyCalorieGoal)
+      };
+
+      // 3. Dispara o motor de registro único
+      const result = await AuthService.register(profilePayload);
+
+      console.log("📱 [REGISTRO UI] -> Resposta de sucesso do AuthService recebida. Sincronizando Redux...");
+
+      // 4. Se a gravação no banco deu certo, atualizamos o Redux local do telemóvel
+      dispatch(setProfile({
+        name: profilePayload.name,
+        birthDate: data.birthDate,
+        weightKg: profilePayload.weight,
+        heightCm: profilePayload.height,
+        sex: profilePayload.gender as any,
+        activityLevel: profilePayload.activityLevel as any,
+        mainGoal: profilePayload.mainGoal as any,
+        dailyCalorieGoal: profilePayload.dailyCalorieGoal
       }));
-      dispatch(loginSuccess({ userId, email: data.email }));
+
+      // 5. Autentica localmente no Redux para o app saber que estamos logados
+      dispatch(loginSuccess({ userId: result.user.id, email: profilePayload.email }));
       
-      Alert.alert("Sucesso!", "Conta criada com sucesso!");
+      Alert.alert("Sucesso!", "A sua conta foi criada com sucesso!");
       onContinue();
 
     } catch (error: any) {
-      if (error.message?.includes('Network')) {
-        Alert.alert('EI! PARECE QUE VOCÊ ESTÁ OFFLINE.', 'Verifique sua conexão e tente novamente.');
-      } else {
-        Alert.alert('Erro ao criar conta', error.message);
-      }
+      console.log("📱 [REGISTRO UI] -> Capturado erro no fluxo: " + error.message);
+      Alert.alert('Erro no Cadastro', error.message || 'Ocorreu um erro ao criar a sua conta.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onFormError = (err: any) => {
-    Alert.alert("Atenção", "Preencha todos os campos do formulário para prosseguir.");
+  const onFormError = () => {
+    Alert.alert("Atenção", "Por favor, preencha todos os campos obrigatórios corretamente.");
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton} disabled={isSubmitting}><Text style={styles.backIcon}>←</Text></TouchableOpacity>
-        <View style={styles.headerCenter}><Text style={styles.headerTitle}>Criar sua conta</Text><Text style={styles.headerStep}>Passo 1 de 2</Text></View>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} disabled={isSubmitting}>
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Criar sua conta</Text>
+          <Text style={styles.headerStep}>Passo 1 de 2</Text>
+        </View>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.progressBar}><View style={styles.progressFill} /></View>
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        
+        {/* SECÇÃO: ACESSO */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Acesso à conta</Text>
           <View style={styles.inputWrapper}>
@@ -147,6 +153,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
             <Controller control={control} name="email" render={({ field: { onChange, value } }) => (
               <TextInput style={[styles.input, errors.email && styles.inputError]} placeholder="nome@exemplo.com" placeholderTextColor={Colors.dark.textSecondary} value={value} onChangeText={onChange} autoCapitalize="none" editable={!isSubmitting} />
             )} />
+            {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
           </View>
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Senha</Text>
@@ -167,6 +174,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           </View>
         </View>
 
+        {/* SECÇÃO: DADOS PESSOAIS */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Dados Pessoais</Text>
           <View style={styles.inputWrapper}>
@@ -174,12 +182,14 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
             <Controller control={control} name="name" render={({ field: { onChange, value } }) => (
               <TextInput style={[styles.input, errors.name && styles.inputError]} placeholder="Seu nome" placeholderTextColor={Colors.dark.textSecondary} value={value} onChangeText={onChange} editable={!isSubmitting} />
             )} />
+            {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
           </View>
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Data de nascimento (DD/MM/AAAA)</Text>
             <Controller control={control} name="birthDate" render={({ field: { onChange, value } }) => (
               <TextInput style={[styles.input, errors.birthDate && styles.inputError]} placeholder="01/01/2000" placeholderTextColor={Colors.dark.textSecondary} value={value} onChangeText={onChange} keyboardType="numeric" maxLength={10} editable={!isSubmitting} />
             )} />
+            {errors.birthDate && <Text style={styles.errorText}>{errors.birthDate.message}</Text>}
           </View>
           <View style={styles.row}>
             <View style={styles.halfInput}>
@@ -187,16 +197,19 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
               <Controller control={control} name="weight" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, errors.weight && styles.inputError]} placeholder="72" keyboardType="numeric" value={value} onChangeText={onChange} editable={!isSubmitting} />
               )} />
+              {errors.weight && <Text style={styles.errorText}>{errors.weight.message}</Text>}
             </View>
             <View style={styles.halfInput}>
               <Text style={styles.inputLabel}>Altura (cm)</Text>
               <Controller control={control} name="height" render={({ field: { onChange, value } }) => (
                 <TextInput style={[styles.input, errors.height && styles.inputError]} placeholder="175" keyboardType="numeric" value={value} onChangeText={onChange} editable={!isSubmitting} />
               )} />
+              {errors.height && <Text style={styles.errorText}>{errors.height.message}</Text>}
             </View>
           </View>
         </View>
 
+        {/* SECÇÃO: GÊNERO */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Gênero</Text>
           <Controller control={control} name="sex" render={({ field: { onChange, value } }) => (
@@ -208,8 +221,10 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
               ))}
             </View>
           )} />
+          {errors.sex && <Text style={styles.errorText}>{errors.sex.message}</Text>}
         </View>
 
+        {/* SECÇÃO: NÍVEL DE ATIVIDADE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Nível de Atividade</Text>
           <Controller control={control} name="activityLevel" render={({ field: { onChange, value } }) => (
@@ -227,6 +242,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
           {errors.activityLevel && <Text style={styles.errorText}>{errors.activityLevel.message}</Text>}
         </View>
 
+        {/* SECÇÃO: OBJETIVO */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Objetivo</Text>
           <Controller control={control} name="mainGoal" render={({ field: { onChange, value } }) => (
@@ -246,7 +262,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleSubmit(onSubmit, onFormError)}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleSubmit(onSubmit, onFormError)} disabled={isSubmitting}>
           {isSubmitting ? <ActivityIndicator color="#FFF" /> : <Text style={styles.continueText}>Finalizar Cadastro →</Text>}
         </TouchableOpacity>
       </View>
