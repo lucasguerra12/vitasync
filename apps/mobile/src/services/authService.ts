@@ -2,8 +2,9 @@ import { supabase } from './supabase';
 
 /**
  * 🛡️ BLINDAGEM MÁGICA 100% ANTI-ERROS TYPESCRIPT
- * Aceita "any" para não entrar em conflito com os Builders do Supabase,
- * e usa Promise.resolve() para forçar a conversão perfeita no React Native.
+ * Aceita "any" para não entrar em conflito com as tipagens internas do Supabase,
+ * e usa Promise.resolve() para forçar uma conversão perfeita no React Native.
+ * Impede o "Loading Infinito" cortando a requisição caso o servidor demore.
  */
 const withTimeout = async (
   request: any, 
@@ -120,5 +121,18 @@ export const AuthService = {
 
     console.log(`✅ [AUTH SERVICE] -> Registo 100% concluído em ${Date.now() - startTime}ms!`);
     return { user: authData.user };
+  },
+
+  /**
+   * 🚪 VASSOURA DO LOGOUT: Destrói a sessão de forma limpa no Supabase
+   */
+  async logout() {
+    console.log("\n🚪 [AUTH SERVICE] -> Iniciando logout seguro...");
+    try {
+      await supabase.auth.signOut();
+      console.log("✅ [AUTH SERVICE] -> Sessão destruída com sucesso.");
+    } catch (error) {
+      console.error("❌ [AUTH SERVICE] -> Erro ao efetuar o logout:", error);
+    }
   }
 };
