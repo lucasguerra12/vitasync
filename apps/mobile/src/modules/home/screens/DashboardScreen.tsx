@@ -4,15 +4,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { addSteps } from '../../../store/slices/profileSlice';
 import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
-
-// NOVO: Importando o serviço de notificações
 import { NotificationService } from '../../../services/NotificationService';
 
-export function DashboardScreen() {
+export function DashboardScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
+  const auth = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
   
-  const { totals, lastMeal, topNutrient } = useDailyNutrition();
+  // 🚨 CORREÇÃO DO TYPESCRIPT: Forçamos o null a virar undefined com o "|| undefined"
+  const { totals, lastMeal, topNutrient } = useDailyNutrition(auth.userId || undefined);
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
@@ -27,11 +27,13 @@ export function DashboardScreen() {
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  // NOVO: Função para testar a notificação
+  // Cálculo Dinâmico do IMC baseado no Redux
+  const userImc = profile.weightKg && profile.heightCm 
+    ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1) 
+    : '--';
+
   const handleTestNotification = async () => {
-    // Pede permissão caso o utilizador ainda não tenha dado
     await NotificationService.requestPermissions();
-    // Dispara a notificação após 1 segundo
     await NotificationService.scheduleLocalNotification(
       "O seu corpo está a falar! 🗣️",
       "Novo insight detectado: a sua dor nas costas diminuiu com a hidratação de hoje.",
@@ -49,7 +51,6 @@ export function DashboardScreen() {
           <Text style={styles.greeting}>Good morning, {profile.name || 'Ana'}</Text>
         </View>
         
-        {/* CORREÇÃO: O botão agora tem o onPress chamando a notificação */}
         <TouchableOpacity style={styles.notificationBtn} onPress={handleTestNotification}>
           <MaterialIcons name="notifications" size={24} color="#94A3B8" />
           <View style={styles.notificationDot} />
@@ -58,7 +59,6 @@ export function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* HEALTH SCORE HERO CARD */}
         <View style={styles.heroCard}>
           <View style={styles.heroContent}>
             <View>
@@ -87,7 +87,6 @@ export function DashboardScreen() {
           </View>
         </View>
 
-        {/* DATE / STREAK ROW */}
         <View style={styles.dateRow}>
           <Text style={styles.dateText}>{dateStr}</Text>
           <View style={styles.streakContainer}>
@@ -96,7 +95,6 @@ export function DashboardScreen() {
           </View>
         </View>
 
-        {/* QUICK STATS GRID */}
         <View style={styles.grid}>
           {/* Card 1: Calories */}
           <View style={[styles.gridCard, { borderTopColor: '#10B981' }]}>
@@ -155,27 +153,32 @@ export function DashboardScreen() {
             </View>
           </View>
 
-          {/* Card 4: Heart Rate */}
-          <View style={[styles.gridCard, { borderTopColor: '#EF4444' }]}>
+          {/* Card 4: O NOVO CARD DE IMC */}
+          <View style={[styles.gridCard, { borderTopColor: '#8B5CF6' }]}>
+            <TouchableOpacity 
+              style={{ position: 'absolute', top: -5, right: -5, zIndex: 10, padding: 15, opacity: 0.8 }}
+              onPress={() => navigation.navigate('IMC')}
+            >
+              <MaterialIcons name="arrow-outward" size={18} color="#8B5CF6" />
+            </TouchableOpacity>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardLabel}>HEART RATE</Text>
-              <MaterialIcons name="monitor-heart" size={20} color="#EF4444" />
+              <Text style={styles.cardLabel}>SEU IMC</Text>
+              <MaterialIcons name="monitor-weight" size={20} color="#8B5CF6" />
             </View>
             <View style={styles.cardValuesRow}>
-              <Text style={styles.cardMainValue}>72</Text>
-              <Text style={styles.cardSubValue}>bpm</Text>
+              <Text style={styles.cardMainValue}>{userImc}</Text>
+              <Text style={styles.cardSubValue}>kg/m²</Text>
             </View>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '40%', backgroundColor: '#EF4444' }]} />
+              <View style={[styles.progressBarFill, { width: '100%', backgroundColor: '#8B5CF6' }]} />
             </View>
           </View>
         </View>
 
-        {/* ACTIVITY TIMELINE */}
         <View style={styles.timelineSection}>
           <View style={styles.timelineHeader}>
             <Text style={styles.sectionTitle}>Today's log</Text>
-            <TouchableOpacity style={styles.seeAllBtn}>
+            <TouchableOpacity style={styles.seeAllBtn} onPress={() => navigation.navigate('NutritionDiary')}>
               <Text style={styles.seeAllText}>See all</Text>
               <MaterialIcons name="arrow-forward" size={14} color="#14B8A6" />
             </TouchableOpacity>
@@ -204,7 +207,6 @@ export function DashboardScreen() {
           </ScrollView>
         </View>
 
-        {/* INSIGHTS PREVIEW */}
         <View style={styles.insightBorder}>
            <View style={styles.insightCard}>
               <View style={styles.insightHeaderRow}>
@@ -221,7 +223,6 @@ export function DashboardScreen() {
            </View>
         </View>
 
-        {/* MEDITATION PROMPT */}
         <View style={styles.meditationCard}>
            <View style={{ flex: 1 }}>
               <Text style={styles.meditationText}>3 minutes could change your afternoon.</Text>

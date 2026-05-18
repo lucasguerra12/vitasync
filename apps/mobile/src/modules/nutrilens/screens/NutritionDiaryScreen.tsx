@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import Svg, { Circle } from 'react-native-svg';
 import { useNutritionHistory } from '../hooks/useNutritionHistory';
-import { useAppSelector } from '../../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 
 const MicroCircle = ({ label, percent, color, val }: { label: string, percent: number, color: string, val: string }) => (
   <View style={styles.microCard}>
@@ -24,23 +24,31 @@ const MicroCircle = ({ label, percent, color, val }: { label: string, percent: n
 );
 
 export function NutritionDiaryScreen({ navigation }: any) {
+  const dispatch = useAppDispatch();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [openMeal, setOpenMeal] = useState<string | null>('breakfast');
 
-  const { groupedMeals, totals, isLoading } = useNutritionHistory(selectedDate);
+  const auth = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
+  
+  // 🚨 CORREÇÃO DO TYPESCRIPT AQUI TAMBÉM: auth.userId || undefined
+  const { groupedMeals, totals, isLoading } = useNutritionHistory(auth.userId || undefined, selectedDate);
+  
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   
-  const kcalLeft = Math.max(0, GOAL_KCAL - totals.calories);
+  const currentCalories = totals?.calories || 0;
+  const kcalLeft = Math.max(0, GOAL_KCAL - currentCalories);
   const circ = 282.7;
 
   let bKcal = 0, lKcal = 0, dKcal = 0, sKcal = 0;
-  groupedMeals.forEach(g => {
-    if (g.id === 'breakfast') bKcal = g.kcal;
-    if (g.id === 'lunch') lKcal = g.kcal;
-    if (g.id === 'dinner') dKcal = g.kcal;
-    if (g.id === 'snack') sKcal = g.kcal;
-  });
+  if (groupedMeals) {
+    groupedMeals.forEach((g: any) => {
+      if (g.id === 'breakfast') bKcal = g.kcal;
+      if (g.id === 'lunch') lKcal = g.kcal;
+      if (g.id === 'dinner') dKcal = g.kcal;
+      if (g.id === 'snack') sKcal = g.kcal;
+    });
+  }
 
   const bPercent = (bKcal / GOAL_KCAL) * circ;
   const lPercent = (lKcal / GOAL_KCAL) * circ;
@@ -51,9 +59,12 @@ export function NutritionDiaryScreen({ navigation }: any) {
   const dAngle = lAngle + (lKcal / GOAL_KCAL) * 360;
   const sAngle = dAngle + (dKcal / GOAL_KCAL) * 360;
 
+  const handleAddWater = () => {
+    console.log("💧 Adicionando 250ml de água...");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      
       <View style={styles.appBar}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <MaterialIcons name="arrow-back" size={24} color="#f8f6f6" />
@@ -78,7 +89,7 @@ export function NutritionDiaryScreen({ navigation }: any) {
       </View>
 
       <View style={styles.headerScoreArea}>
-        <Text style={styles.scoreBig}>{totals.calories.toLocaleString()} <Text style={styles.scoreSmall}>/ {GOAL_KCAL.toLocaleString()} kcal</Text></Text>
+        <Text style={styles.scoreBig}>{currentCalories.toLocaleString()} <Text style={styles.scoreSmall}>/ {GOAL_KCAL.toLocaleString()} kcal</Text></Text>
       </View>
 
       {isLoading ? (
@@ -98,7 +109,7 @@ export function NutritionDiaryScreen({ navigation }: any) {
                 {sKcal > 0 ? <Circle cx="50" cy="50" r="45" fill="transparent" stroke="#f59e0b" strokeWidth="8" strokeDasharray={circ} strokeDashoffset={circ - sPercent} transform={`rotate(${sAngle} 50 50)`} strokeLinecap="round" /> : null}
               </Svg>
               <View style={styles.donutCenterText}>
-                <Text style={styles.donutNumber}>{kcalLeft}</Text>
+                <Text style={styles.donutNumber}>{Math.round(kcalLeft)}</Text>
                 <Text style={styles.donutLabel}>KCAL LEFT</Text>
               </View>
             </View>
@@ -116,19 +127,19 @@ export function NutritionDiaryScreen({ navigation }: any) {
               <MaterialIcons name="analytics" size={16} color="#ec5b13" />
               <Text style={styles.macroCardTitle}>Macronutrients</Text>
             </View>
-            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Carbs</Text><Text style={[styles.macroValText, {color: '#3b82f6'}]}>{totals.carbs}g / 250g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.carbs/250)*100)}%`, backgroundColor: '#3b82f6' }]} /></View></View>
-            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Protein</Text><Text style={[styles.macroValText, {color: '#ec5b13'}]}>{totals.protein}g / 160g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.protein/160)*100)}%`, backgroundColor: '#ec5b13' }]} /></View></View>
-            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Fat</Text><Text style={[styles.macroValText, {color: '#f59e0b'}]}>{totals.fat}g / 70g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, (totals.fat/70)*100)}%`, backgroundColor: '#f59e0b' }]} /></View></View>
+            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Carbs</Text><Text style={[styles.macroValText, {color: '#3b82f6'}]}>{totals?.carbs || 0}g / 250g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, ((totals?.carbs || 0)/250)*100)}%`, backgroundColor: '#3b82f6' }]} /></View></View>
+            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Protein</Text><Text style={[styles.macroValText, {color: '#ec5b13'}]}>{totals?.protein || 0}g / 160g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, ((totals?.protein || 0)/160)*100)}%`, backgroundColor: '#ec5b13' }]} /></View></View>
+            <View style={styles.macroRow}><View style={styles.macroTextRow}><Text style={styles.macroName}>Fat</Text><Text style={[styles.macroValText, {color: '#f59e0b'}]}>{totals?.fat || 0}g / 70g</Text></View><View style={styles.macroBarBg}><View style={[styles.macroBarFill, { width: `${Math.min(100, ((totals?.fat || 0)/70)*100)}%`, backgroundColor: '#f59e0b' }]} /></View></View>
           </View>
 
           <View style={styles.mealsSection}>
-            {groupedMeals.length === 0 ? (
+            {!groupedMeals || groupedMeals.length === 0 ? (
               <View style={styles.emptyState}>
                 <MaterialIcons name="restaurant-menu" size={48} color="#4a3b32" />
                 <Text style={styles.emptyStateText}>Nenhuma refeição registrada neste dia.</Text>
               </View>
             ) : (
-              groupedMeals.map((group, index) => {
+              groupedMeals.map((group: any, index: number) => {
                 const isOpen = openMeal === group.id;
                 let groupColor = '#ec5b13';
                 if(group.id === 'breakfast') groupColor = '#3b82f6';
@@ -155,18 +166,6 @@ export function NutritionDiaryScreen({ navigation }: any) {
             )}
           </View>
 
-          <View style={styles.alertCard}><View style={styles.alertIconBg}><MaterialIcons name="warning" size={20} color="#ef4444" /></View><View style={{ flex: 1 }}><Text style={styles.alertTitle}>Vitamin D critical</Text><Text style={styles.alertDesc}>Current intake is only 8% of daily target.</Text></View></View>
-
-          <View style={styles.microSection}>
-            <View style={styles.microHeader}><Text style={styles.sectionTitle}>Micronutrients</Text><Text style={styles.linkText}>Full Report</Text></View>
-            <View style={styles.microGrid}>
-              <MicroCircle label="Vit D" percent={8} color="#ef4444" val="8%" /><MicroCircle label="Iron" percent={55} color="#f59e0b" val="55%" />
-              <MicroCircle label="Vit C" percent={85} color="#22c55e" val="85%" /><MicroCircle label="Calcium" percent={92} color="#22c55e" val="92%" />
-              <MicroCircle label="Zinc" percent={65} color="#f59e0b" val="65%" /><MicroCircle label="Vit A" percent={80} color="#22c55e" val="80%" />
-              <MicroCircle label="Fiber" percent={25} color="#ef4444" val="25%" /><MicroCircle label="Vit B12" percent={40} color="#f59e0b" val="40%" />
-            </View>
-          </View>
-
           <View style={styles.waterSection}>
             <View style={styles.waterHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><MaterialIcons name="water-drop" size={20} color="#3b82f6" /><Text style={styles.sectionTitle}>Water Log</Text></View>
@@ -175,10 +174,15 @@ export function NutritionDiaryScreen({ navigation }: any) {
             <View style={styles.waterDropsGrid}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((drop, i) => {
                 const isFilled = isSameDay(selectedDate, new Date()) && profile.currentWaterMl >= drop * 250;
-                return <MaterialIcons key={i} name="water-drop" size={28} color={isFilled ? "#3b82f6" : "#3e2a1e"} />;
+                return (
+                  <TouchableOpacity key={i} onPress={handleAddWater}>
+                    <MaterialIcons name="water-drop" size={28} color={isFilled ? "#3b82f6" : "#3e2a1e"} />
+                  </TouchableOpacity>
+                );
               })}
             </View>
           </View>
+
         </ScrollView>
       )}
     </SafeAreaView>
