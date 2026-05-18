@@ -17,6 +17,8 @@ import { loginSuccess, logout } from './src/store/slices/authSlice';
 import { setProfile } from './src/store/slices/profileSlice';
 import { supabase } from './src/services/supabase';
 import { calcDailyCalories } from './src/utils'; 
+import 'react-native-url-polyfill/auto';
+import 'react-native-get-random-values';
 
 function AppContent() {
   const dispatch = useAppDispatch();

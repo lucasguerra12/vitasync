@@ -109,8 +109,8 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
         activity_level: data.activityLevel,
         goal: data.mainGoal,
         daily_calorie_goal: Math.round(dailyCalorieGoal),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: Date.now(),
+        updated_at: Date.now(),
       }]);
 
       console.log("🟢 [RASTREADOR] 6. Resposta da Tabela recebida!", { sucesso: !dbError, erro: dbError?.message });
