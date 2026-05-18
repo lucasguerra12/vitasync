@@ -1,5 +1,4 @@
 import 'react-native-url-polyfill/auto';
-import 'react-native-get-random-values';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,6 +11,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true, 
     autoRefreshToken: true,
     detectSessionInUrl: false,
-    flowType: 'pkce', 
+    flowType: 'implicit',
   },
 });

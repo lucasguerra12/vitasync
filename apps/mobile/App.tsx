@@ -17,8 +17,6 @@ import { loginSuccess, logout } from './src/store/slices/authSlice';
 import { setProfile } from './src/store/slices/profileSlice';
 import { supabase } from './src/services/supabase';
 import { calcDailyCalories } from './src/utils'; 
-import 'react-native-url-polyfill/auto';
-import 'react-native-get-random-values';
 
 function AppContent() {
   const dispatch = useAppDispatch();
@@ -40,7 +38,6 @@ function AppContent() {
   useStepCounter();
 
   useEffect(() => {
-    // 1. Adicionamos o parâmetro "isBoot"
     const loadUserProfile = async (session: any, isBoot: boolean = false) => {
       try {
         const { data: profile } = await supabase
@@ -70,8 +67,6 @@ function AppContent() {
             email: session.user.email || ''
           }));
         } else if (isBoot) {
-          // 🚨 A MÁGICA ESTÁ AQUI: Ele SÓ vai forçar o deslog se for na hora que o app abre.
-          // Se for durante o Cadastro, ele ignora e deixa a tela de Cadastro salvar os dados!
           await supabase.auth.signOut();
           dispatch(logout());
         }
@@ -80,7 +75,6 @@ function AppContent() {
       }
     };
 
-    // 2. Restaura a sessão ao abrir o App (AQUI É BOOT: isBoot = true)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         loadUserProfile(session, true).finally(() => setIsRestoringSession(false));
@@ -89,7 +83,6 @@ function AppContent() {
       }
     });
 
-    // 3. Listener Global (AQUI É LISTENER: isBoot = false)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         loadUserProfile(session, false);
@@ -99,7 +92,7 @@ function AppContent() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [dispatch]);
 
   if (!fontsLoaded || isRestoringSession) {
     return (

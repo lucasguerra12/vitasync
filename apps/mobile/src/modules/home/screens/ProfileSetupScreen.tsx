@@ -12,8 +12,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod'; 
 import { supabase } from '../../../services/supabase';
-// IMPORTANTE: Importamos o AsyncStorage para testá-lo antes do Supabase!
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SEX_OPTIONS = ['Masculino', 'Feminino', 'Outro'] as const;
 
@@ -64,32 +62,19 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
   });
 
   const onSubmit = async (data: SetupFormData) => {
-    console.log("\n========================================");
-    console.log("🟢 [RASTREADOR] 1. Botão clicado! Passou pelo Zod.");
     setIsSubmitting(true); 
 
     try {
-      console.log("🟢 [RASTREADOR] 2. Verificando Variáveis de Ambiente...");
-      console.log("   -> URL:", process.env.EXPO_PUBLIC_SUPABASE_URL || "UNDEFINED ❌");
-      const keyLength = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.length || 0;
-      console.log(`   -> KEY: ${keyLength > 10 ? "Lida com sucesso ✅ (" + keyLength + " caracteres)" : "UNDEFINED ❌"}`);
-
-      console.log("🟢 [RASTREADOR] 2.1. Testando Motor do AsyncStorage (Pode travar aqui!)...");
-      await AsyncStorage.setItem('@teste_vitasync', '123');
-      const testeLido = await AsyncStorage.getItem('@teste_vitasync');
-      console.log("🟢 [RASTREADOR] 2.2. AsyncStorage funcionou perfeitamente! Valor lido:", testeLido);
-
-      console.log("🟢 [RASTREADOR] 3. Chamando API do Supabase (Aguardando Resposta)...");
+      // 1. Criar Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       });
 
-      console.log("🟢 [RASTREADOR] 4. Resposta do Auth recebida!", { sucesso: !!authData?.user, erro: authError?.message });
-
       if (authError) throw new Error(authError.message);
       if (!authData.user) throw new Error("Falha ao criar utilizador no sistema.");
 
+      // 2. Preparar Dados
       const userId = authData.user.id;
       const age = calcAge(data.birthDate) || 0; 
       const parsedWeight = parseFloat(data.weight.replace(',', '.')); 
@@ -97,7 +82,7 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       const dailyCalorieGoal = calcDailyCalories(data.sex as any, parsedWeight, parsedHeight, age, data.activityLevel as any);
       const dbGender = data.sex === 'Masculino' ? 'male' : data.sex === 'Feminino' ? 'female' : 'other';
 
-      console.log("🟢 [RASTREADOR] 5. Inserindo dados na tabela 'profiles'...");
+      // 3. Salvar no Banco (Usando Date.now() para respeitar o tipo BIGINT do seu banco)
       const { error: dbError } = await supabase.from('profiles').insert([{
         user_id: userId,
         name: data.name,
@@ -109,18 +94,16 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
         activity_level: data.activityLevel,
         goal: data.mainGoal,
         daily_calorie_goal: Math.round(dailyCalorieGoal),
-        created_at: Date.now(),
+        created_at: Date.now(), 
         updated_at: Date.now(),
       }]);
 
-      console.log("🟢 [RASTREADOR] 6. Resposta da Tabela recebida!", { sucesso: !dbError, erro: dbError?.message });
-
       if (dbError) {
         await supabase.auth.signOut();
-        throw new Error("Erro ao salvar dados do perfil. Tente novamente. Detalhe: " + dbError.message);
+        throw new Error("Erro ao salvar dados do perfil: " + dbError.message);
       }
 
-      console.log("🟢 [RASTREADOR] 7. SUCESSO TOTAL! Atualizando Redux e navegando.");
+      // 4. Sucesso! Atualiza rotas
       dispatch(setProfile({
         name: data.name, birthDate: data.birthDate, weightKg: parsedWeight, heightCm: parsedHeight,
         sex: dbGender as any, activityLevel: data.activityLevel as any, mainGoal: data.mainGoal as any,
@@ -132,21 +115,17 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
       onContinue();
 
     } catch (error: any) {
-      console.log("🔴 [RASTREADOR] ERRO CAPTURADO NO CATCH:", error);
       if (error.message?.includes('Network')) {
         Alert.alert('EI! PARECE QUE VOCÊ ESTÁ OFFLINE.', 'Verifique sua conexão e tente novamente.');
       } else {
         Alert.alert('Erro ao criar conta', error.message);
       }
     } finally {
-      console.log("🏁 [RASTREADOR] Finalizou a função. Desligando Loading.");
-      console.log("========================================\n");
       setIsSubmitting(false);
     }
   };
 
   const onFormError = (err: any) => {
-    console.log("🚨 [RASTREADOR] ERRO NO FORMULÁRIO (ZOD):", err);
     Alert.alert("Atenção", "Preencha todos os campos do formulário para prosseguir.");
   };
 
@@ -168,7 +147,6 @@ export default function ProfileSetupScreen({ onContinue, onBack }: Props) {
             <Controller control={control} name="email" render={({ field: { onChange, value } }) => (
               <TextInput style={[styles.input, errors.email && styles.inputError]} placeholder="nome@exemplo.com" placeholderTextColor={Colors.dark.textSecondary} value={value} onChangeText={onChange} autoCapitalize="none" editable={!isSubmitting} />
             )} />
-            {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
           </View>
           <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Senha</Text>
