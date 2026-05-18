@@ -40,22 +40,40 @@ export default function LoginScreen({ onLogin, onCreateAccount }: Props) {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
 
-      if (error) throw new Error("Credenciais inválidas ou conta não existe.");
-      if (!data.user) throw new Error("Falha ao recuperar dados do utilizador.");
+      if (authError) throw new Error("E-mail ou senha incorretos.");
+      if (!authData.user) throw new Error("Falha ao recuperar dados do utilizador.");
 
-      // A partir daqui, NÃO precisamos dar dispatch manual!
-      // O App.tsx está rodando o "onAuthStateChange", e assim que o Supabase avisar que logou, 
-      // o próprio App.tsx vai buscar o perfil e jogar para a tela principal!
-      onLogin();
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', authData.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        throw new Error("Perfil não encontrado. Por favor, crie uma nova conta.");
+      }
+
+      // Se tudo deu certo, atualizamos o Redux (Isso engatilha a navegação para o MainTabs!)
+      const dailyKcal = calcDailyCalories(profile.gender, profile.weight, profile.height, profile.age, profile.activity_level);
+
+      dispatch(setProfile({
+        name: profile.name || '', birthDate: '', weightKg: profile.weight || 0,
+        heightCm: profile.height || 0, sex: profile.gender as any,
+        activityLevel: profile.activity_level as any, mainGoal: profile.goal as any,
+        dailyCalorieGoal: dailyKcal
+      }));
+
+      dispatch(loginSuccess({ userId: authData.user.id, email: authData.user.email || '' }));
 
     } catch (error: any) {
       if (error.message?.includes('Network') || error.message?.includes('fetch')) {
-         Alert.alert('EI! PARECE QUE VOCÊ ESTÁ OFFLINE.', 'Conecte-se à internet para entrar.');
+         Alert.alert('Você está offline.', 'Conecte-se à internet para entrar.');
       } else {
          Alert.alert('Erro de Acesso', error.message);
       }

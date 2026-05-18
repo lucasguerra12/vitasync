@@ -38,8 +38,8 @@ function AppContent() {
   useStepCounter();
 
   useEffect(() => {
-    // 1. Função para carregar o perfil completo do banco
-    const loadUserProfile = async (session: any) => {
+    // 1. Adicionamos o parâmetro "isBoot"
+    const loadUserProfile = async (session: any, isBoot: boolean = false) => {
       try {
         const { data: profile } = await supabase
           .from('profiles')
@@ -60,15 +60,16 @@ function AppContent() {
             sex: profile.gender as any,
             activityLevel: profile.activity_level as any,
             mainGoal: profile.goal as any,
-            dailyCalorieGoal: dailyKcal // Agora é dinâmico!
+            dailyCalorieGoal: dailyKcal
           }));
 
           dispatch(loginSuccess({
             userId: session.user.id,
             email: session.user.email || ''
           }));
-        } else {
-          // Se logou mas não tem perfil, desloga por segurança (Rollback prático)
+        } else if (isBoot) {
+          // 🚨 A MÁGICA ESTÁ AQUI: Ele SÓ vai forçar o deslog se for na hora que o app abre.
+          // Se for durante o Cadastro, ele ignora e deixa a tela de Cadastro salvar os dados!
           await supabase.auth.signOut();
           dispatch(logout());
         }
@@ -77,19 +78,19 @@ function AppContent() {
       }
     };
 
-    // 2. Restaura a sessão ao abrir o App
+    // 2. Restaura a sessão ao abrir o App (AQUI É BOOT: isBoot = true)
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        loadUserProfile(session).finally(() => setIsRestoringSession(false));
+        loadUserProfile(session, true).finally(() => setIsRestoringSession(false));
       } else {
         setIsRestoringSession(false);
       }
     });
 
-    // 3. Listener Global (Escuta logins e logouts em tempo real)
+    // 3. Listener Global (AQUI É LISTENER: isBoot = false)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        loadUserProfile(session);
+        loadUserProfile(session, false);
       } else {
         dispatch(logout());
       }
