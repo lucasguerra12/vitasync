@@ -1,0 +1,29 @@
+[
+  {
+    "id": "pushup_01",
+    "name": "Flexão de Braço",
+    "category": "Peito",
+    "targetReps": 12,
+    "targetSets": 3,
+    "image": "https://api.dicebear.com/7.x/pixel-art/png?seed=flexao",
+    "description": "Mantenha o corpo reto e desça até o peito quase tocar o chão."
+  },
+  {
+    "id": "squat_01",
+    "name": "Agachamento",
+    "category": "Pernas",
+    "targetReps": 15,
+    "targetSets": 4,
+    "image": "https://api.dicebear.com/7.x/pixel-art/png?seed=agachamento",
+    "description": "Mantenha os calcanhares no chão e desça os quadris para trás."
+  },
+  {
+    "id": "plank_01",
+    "name": "Prancha Abdominal",
+    "category": "Core",
+    "targetReps": 45,
+    "targetSets": 3,
+    "image": "https://api.dicebear.com/7.x/pixel-art/png?seed=prancha",
+    "description": "Mantenha o corpo alinhado e o abdômen contraído."
+  }
+]

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, Act
 import { supabase } from '../../../services/supabase';
 import { useActivityMetrics } from '../../../hooks/useActivityMetrics';
 import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons'; // Importando MaterialIcons para o botão de histórico
 
 export const FitTrackDashboardScreen = () => {
   const navigation = useNavigation<any>();
@@ -49,15 +50,26 @@ export const FitTrackDashboardScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Header */}
+        {/* Header Ajustado */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>FitTrack</Text>
             <Text style={styles.headerSubtitle}>Active Tracking Mode</Text>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
-            <Text style={{ color: '#fff' }}>👤</Text> 
-          </TouchableOpacity>
+          
+          {/* Grupo de botões à direita */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              onPress={() => navigation.navigate('ExerciseDiaryScreen')}
+            >
+              <MaterialIcons name="history" size={26} color="#fff" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.profileButton}>
+              <Text style={{ color: '#fff' }}>👤</Text> 
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Hero Card - Daily Activity */}
@@ -95,17 +107,15 @@ export const FitTrackDashboardScreen = () => {
         </View>
 
         {/* Action Grid */}
-        {/* Action Grid */}
         <View style={styles.actionGrid}>
           {['RUN', 'WORKOUT', 'HEART', 'PARKS'].map((action, index) => (
             <TouchableOpacity 
               key={index} 
               style={styles.actionButton}
               onPress={() => {
-                // Navega para a tela de corrida se clicar em RUN
-                if (action === 'RUN') {
-                  navigation.navigate('ActiveRunScreen');
-                }
+                if (action === 'RUN') navigation.navigate('ActiveRunScreen');
+                if (action === 'PARKS') navigation.navigate('ParksScreen');
+                if (action === 'WORKOUT') navigation.navigate('ExerciseMenuScreen');
               }}
             >
               <View style={styles.actionIconBox}>
@@ -119,7 +129,7 @@ export const FitTrackDashboardScreen = () => {
         </View>
 
         {/* Cta Start Workout */}
-        <TouchableOpacity style={styles.ctaButton}>
+        <TouchableOpacity style={styles.ctaButton} onPress={() => navigation.navigate('ExerciseMenuScreen')}>
           <Text style={styles.ctaButtonText}>▶ START WORKOUT</Text>
         </TouchableOpacity>
 
@@ -127,11 +137,6 @@ export const FitTrackDashboardScreen = () => {
         <View style={styles.recentSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Workouts</Text>
-            {recentWorkouts.length > 0 && (
-              <TouchableOpacity>
-                <Text style={styles.seeAllText}>See all</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {isLoading ? (
@@ -139,7 +144,6 @@ export const FitTrackDashboardScreen = () => {
           ) : recentWorkouts.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>Nenhum treino registrado.</Text>
-              <Text style={styles.emptyStateSubtext}>Comece uma atividade para ver seu histórico aqui!</Text>
             </View>
           ) : (
             recentWorkouts.map((workout) => (
@@ -172,6 +176,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   headerTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
   headerSubtitle: { color: '#94a3b8', fontSize: 12 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 }, // Container dos botões
+  iconButton: { padding: 8 }, // Botão de histórico
   profileButton: { width: 40, height: 40, backgroundColor: '#334155', borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   heroCard: { backgroundColor: '#f97316', borderRadius: 16, padding: 20, marginBottom: 24 },
   heroLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '500' },
@@ -195,10 +201,8 @@ const styles = StyleSheet.create({
   recentSection: { marginTop: 8 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  seeAllText: { color: '#f97316', fontSize: 14 },
   emptyState: { padding: 20, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, marginTop: 8 },
-  emptyStateText: { color: '#fff', fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  emptyStateSubtext: { color: '#94a3b8', fontSize: 12, textAlign: 'center' },
+  emptyStateText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   workoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', borderRadius: 12, padding: 12, marginBottom: 12 },
   workoutIconBg: { width: 44, height: 44, backgroundColor: '#334155', borderRadius: 8, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   workoutDetails: { flex: 1 },
