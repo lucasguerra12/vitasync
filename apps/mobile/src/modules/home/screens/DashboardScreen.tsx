@@ -5,29 +5,29 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { addSteps } from '../../../store/slices/profileSlice';
 import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
 import { NotificationService } from '../../../services/NotificationService';
+// IMPORT DO NOSSO HOOK GLOBAL
+import { useActivityMetrics } from '../../../hooks/useActivityMetrics';
 
 export function DashboardScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
   
-  // 🚨 CORREÇÃO DO TYPESCRIPT: Forçamos o null a virar undefined com o "|| undefined"
   const { totals, lastMeal, topNutrient } = useDailyNutrition(auth.userId || undefined);
+
+  // CONSUMINDO O HOOK GLOBAL (Fonte Única de Verdade)
+  const { steps, progressPercentage: stepsPercent, dailyGoal: GOAL_STEPS } = useActivityMetrics();
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
   
   const healthScore = Math.round(progressPercent) > 0 ? Math.round(progressPercent) : 78;
 
-  const GOAL_STEPS = 10000;
-  const stepsPercent = Math.min(100, (profile.currentSteps / GOAL_STEPS) * 100);
-
   const GOAL_WATER = 2000;
   const waterSquaresFilled = Math.min(5, Math.floor((profile.currentWaterMl / GOAL_WATER) * 5));
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  // Cálculo Dinâmico do IMC baseado no Redux
   const userImc = profile.weightKg && profile.heightCm 
     ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1) 
     : '--';
@@ -125,7 +125,7 @@ export function DashboardScreen({ navigation }: any) {
               <MaterialIcons name="show-chart" size={20} color="#F97316" />
             </View>
             <View style={styles.cardValuesRow}>
-              <Text style={styles.cardMainValue}>{profile.currentSteps.toLocaleString()}</Text>
+              <Text style={styles.cardMainValue}>{steps.toLocaleString()}</Text>
               <Text style={styles.cardSubValue}>/ {GOAL_STEPS.toLocaleString()}</Text>
             </View>
             <View style={styles.progressBarBg}>
@@ -153,7 +153,7 @@ export function DashboardScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Card 4: O NOVO CARD DE IMC */}
+          {/* Card 4: IMC */}
           <View style={[styles.gridCard, { borderTopColor: '#8B5CF6' }]}>
             <TouchableOpacity 
               style={{ position: 'absolute', top: -5, right: -5, zIndex: 10, padding: 15, opacity: 0.8 }}
