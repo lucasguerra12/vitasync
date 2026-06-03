@@ -1,20 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialIcons } from '@expo/vector-icons';
-import  { DashboardScreen }  from '../modules/home/screens/DashboardScreen';
+import { DashboardScreen } from '../modules/home/screens/DashboardScreen';
 import { NutriLensScreen } from '../modules/nutrilens/screens/NutriLensScreen';
-
-// Ecrãs "Temporários" (Placeholders para as próximas etapas)
-const FitTrackScreen = () => (
-  <View style={styles.placeholder}><Text style={styles.placeholderText}>💪 FitTrack (Em Breve)</Text></View>
-);
-const MindZenScreen = () => (
-  <View style={styles.placeholder}><Text style={styles.placeholderText}>🧘 MindZen (Em Breve)</Text></View>
-);
-const HealthPactScreen = () => (
-  <View style={styles.placeholder}><Text style={styles.placeholderText}>🤝 HealthPact (Sprint 3)</Text></View>
-);
+import { FitTrackDashboardScreen } from '../modules/fittrack/screens/FitTrackDashboardScreen';
+import { Colors } from '../constants/colors';
+import { Text } from 'react-native';
 
 const Tab = createBottomTabNavigator();
 
@@ -23,64 +13,41 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: '#f97316', 
+        tabBarInactiveTintColor: '#94a3b8',
         tabBarStyle: {
-          backgroundColor: '#1E293B',
-          borderTopWidth: 1,
-          borderTopColor: '#334155',
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 5,
+          backgroundColor: '#0f172a', 
+          borderTopColor: '#1e293b',
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 60,
         },
-        tabBarActiveTintColor: '#10B981',
-        tabBarInactiveTintColor: '#94A3B8',
-        tabBarLabelStyle: { fontSize: 10, fontWeight: 'bold' }
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={DashboardScreen}
+      <Tab.Screen 
+        name="Home" 
+        component={DashboardScreen} 
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="grid-view" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Text style={{ color }}>🏠</Text>,
         }}
       />
-      <Tab.Screen
-        name="NutriLens"
-        component={NutriLensScreen}
-        options={{
-          tabBarLabel: 'NutriLens',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="eco" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="FitTrack"
-        component={FitTrackScreen}
+      <Tab.Screen 
+        name="FitTrack" 
+        component={FitTrackDashboardScreen} 
         options={{
           tabBarLabel: 'FitTrack',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="fitness-center" size={size} color={color} />,
+          tabBarIcon: ({ color }) => <Text style={{ color }}>⚡</Text>,
         }}
       />
-      <Tab.Screen
-        name="MindZen"
-        component={MindZenScreen}
+      <Tab.Screen 
+        name="NutriLens" 
+        component={NutriLensScreen} 
         options={{
-          tabBarLabel: 'MindZen',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="self-improvement" size={size} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="HealthPact"
-        component={HealthPactScreen}
-        options={{
-          tabBarLabel: 'HealthPact',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="groups" size={size} color={color} />,
+          tabBarLabel: 'NutriLens',
+          tabBarIcon: ({ color }) => <Text style={{ color }}>🍎</Text>,
         }}
       />
     </Tab.Navigator>
   );
-}
-
-const styles = StyleSheet.create({
-  placeholder: { flex: 1, backgroundColor: '#0F172A', justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: '#94A3B8', fontSize: 20, fontWeight: 'bold' }
-});
+};
