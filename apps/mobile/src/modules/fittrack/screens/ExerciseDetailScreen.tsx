@@ -43,7 +43,7 @@ export function ExerciseDetailScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0F1E', alignItems: 'center' },
-  backBtn: { position: 'absolute', top: 50, left: 20, zIndex: 10 },
+  backBtn: { position: 'absolute', top: 60, left: 20, zIndex: 10 },
   title: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginTop: 100, marginBottom: 40 },
   circleContainer: { width: 160, height: 160, justifyContent: 'center', alignItems: 'center' },
   svg: { position: 'absolute' },

@@ -123,7 +123,7 @@ export function ActiveRunScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0F1E' },
   mapPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0F1E' },
-  overlayHeader: { position: 'absolute', top: 0, left: 0, right: 0, padding: 16, zIndex: 10 },
+  overlayHeader: { position: 'absolute', top: 20, left: 0, right: 0, padding: 16, zIndex: 10 },
   backButton: { width: 44, height: 44, backgroundColor: 'rgba(30, 41, 59, 0.8)', borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   bottomSheet: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0A0F1E', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, borderTopWidth: 1, borderColor: '#1E293B' },
   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },

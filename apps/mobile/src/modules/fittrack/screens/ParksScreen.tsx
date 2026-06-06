@@ -50,7 +50,7 @@ export function ParksScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0F1E' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' , paddingTop: 50 },
   title: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   listContent: { padding: 20 },
   card: { 

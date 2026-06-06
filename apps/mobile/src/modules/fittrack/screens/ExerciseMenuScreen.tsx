@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'; // <-- Adicionado MaterialIcons aqui
 import exercises from '../../../utils/exercises.json';
 
 export function ExerciseMenuScreen({ navigation }: any) {
@@ -17,7 +17,11 @@ export function ExerciseMenuScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* HEADER COM BOTÃO DE VOLTAR */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="#FFF" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Exercícios</Text>
       </View>
 
@@ -53,25 +57,26 @@ export function ExerciseMenuScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0F1E' }, // Fundo Vita-Black
-  header: { padding: 20, paddingTop: 40 },
+  container: { flex: 1, backgroundColor: '#0A0F1E' }, 
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20, paddingTop: 40 }, // Ajustado para alinhar ícone e texto
+  backButton: { marginRight: 16, padding: 10 , }, // Espaçamento do botão
   headerTitle: { color: '#FFF', fontSize: 28, fontWeight: 'bold' },
-  list: { padding: 20 },
+  list: { padding: 20, paddingTop: 0 },
   card: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#1E293B', // Fundo do Card (Vita-Surface)
+    backgroundColor: '#1E293B', 
     padding: 12, 
-    borderRadius: 16, // Borda arredondada suave
+    borderRadius: 16, 
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#334155' // Borda sutil
+    borderColor: '#334155' 
   },
   iconWrapper: { 
-    width: 60, // Tamanho do quadrado da imagem
+    width: 60, 
     height: 60, 
     borderRadius: 12, 
-    backgroundColor: '#0F172A', // Cor do fundo do bonequinho (mais escuro que o card)
+    backgroundColor: '#0F172A', 
     justifyContent: 'center', 
     alignItems: 'center', 
     marginRight: 16 

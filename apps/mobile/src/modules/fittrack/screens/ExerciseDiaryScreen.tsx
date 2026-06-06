@@ -7,9 +7,15 @@ export function ExerciseDiaryScreen({ navigation }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
+        {/* HEADER COM BOTÃO DE VOLTAR */}
         <View style={styles.header}>
-          <Text style={styles.title}>History</Text>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <MaterialIcons name="arrow-back" size={24} color="#f1f5f9" />
+            </TouchableOpacity>
+            <Text style={styles.title}>History</Text>
+          </View>
+          
           <TouchableOpacity style={styles.dropdownBtn}>
             <Text style={styles.dropdownText}>Last 30 days</Text>
             <MaterialIcons name="expand-more" size={18} color="#f97316" />
@@ -40,7 +46,7 @@ export function ExerciseDiaryScreen({ navigation }: any) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           
-          {/* Card de Corrida */}
+          {/* Card de Corrida - Maior espaçamento abaixo */}
           <View style={styles.workoutCardActive}>
             <View style={styles.cardHeader}>
               <View style={styles.iconCircleActive}>
@@ -57,7 +63,7 @@ export function ExerciseDiaryScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Card Simples */}
+          {/* Card Simples - Maior espaçamento abaixo */}
           <View style={styles.workoutCard}>
             <View style={styles.iconCircle}>
               <MaterialIcons name="fitness-center" size={20} color="#38bdf8" />
@@ -71,6 +77,22 @@ export function ExerciseDiaryScreen({ navigation }: any) {
               <View style={styles.badge}><Text style={styles.badgeText}>380 Kcal</Text></View>
             </View>
           </View>
+
+          {/* Card Simples 2 (Apenas para ver o espaçamento) */}
+          <View style={styles.workoutCard}>
+            <View style={styles.iconCircle}>
+              <MaterialIcons name="directions-walk" size={20} color="#f59e0b" />
+            </View>
+            <View style={{flex: 1, marginLeft: 12}}>
+              <Text style={styles.cardTitle}>Evening Walk</Text>
+              <Text style={styles.cardDate}>Jun 12, 2026</Text>
+            </View>
+            <View style={{alignItems: 'flex-end'}}>
+              <Text style={styles.cardMetric}>3.1 km</Text>
+              <View style={styles.badge}><Text style={styles.badgeText}>120 Kcal</Text></View>
+            </View>
+          </View>
+
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -80,19 +102,21 @@ export function ExerciseDiaryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { marginRight: 16, padding: 4 },
   title: { color: '#f1f5f9', fontSize: 24, fontWeight: 'bold' },
   dropdownBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#334155' },
   dropdownText: { color: '#f1f5f9', fontSize: 12, marginRight: 4 },
-  statsCard: { margin: 20, padding: 20, borderRadius: 16, shadowColor: '#f97316', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
+  statsCard: { margin: 20, marginTop: 0, padding: 20, borderRadius: 16, shadowColor: '#f97316', shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   gridItem: { width: '50%', marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   statLabel: { color: '#FFF', fontSize: 10, textTransform: 'uppercase', opacity: 0.9, marginLeft: 4, fontWeight: '500' },
   statValue: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
-  section: { padding: 20 },
-  sectionTitle: { color: '#f1f5f9', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  workoutCardActive: { backgroundColor: '#1e293b', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#f97316' },
-  workoutCard: { backgroundColor: '#1e293b', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#334155' },
+  section: { padding: 20, paddingTop: 0 },
+  sectionTitle: { color: '#f1f5f9', fontSize: 18, fontWeight: 'bold', marginBottom: 20 },
+  workoutCardActive: { backgroundColor: '#1e293b', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#f97316', marginBottom: 20 }, // Margem aumentada para 20
+  workoutCard: { backgroundColor: '#1e293b', padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: '#334155' }, // Margem aumentada para 20
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
   iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#334155', justifyContent: 'center', alignItems: 'center' },
   iconCircleActive: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f9731622', justifyContent: 'center', alignItems: 'center' },
