@@ -5,8 +5,8 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { addSteps } from '../../../store/slices/profileSlice';
 import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
 import { NotificationService } from '../../../services/NotificationService';
-// IMPORT DO NOSSO HOOK GLOBAL
 import { useActivityMetrics } from '../../../hooks/useActivityMetrics';
+import {useWater } from '../../../hooks/useWater';
 
 export function DashboardScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -15,14 +15,13 @@ export function DashboardScreen({ navigation }: any) {
   
   const { totals, lastMeal, topNutrient } = useDailyNutrition(auth.userId || undefined);
 
-  // CONSUMINDO O HOOK GLOBAL (Fonte Única de Verdade)
   const { steps, progressPercentage: stepsPercent, dailyGoal: GOAL_STEPS } = useActivityMetrics();
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
   
   const healthScore = Math.round(progressPercent) > 0 ? Math.round(progressPercent) : 78;
-
+  const { water } = useWater();
   const GOAL_WATER = 2000;
   const waterSquaresFilled = Math.min(5, Math.floor((profile.currentWaterMl / GOAL_WATER) * 5));
 
@@ -136,7 +135,7 @@ export function DashboardScreen({ navigation }: any) {
           {/* Card 3: Water */}
           <View style={[styles.gridCard, { borderTopColor: '#3B82F6' }]}>
             <View style={styles.cardHeader}>
-              <Text style={styles.cardLabel}>WATER</Text>
+              <Text>{water} ml</Text>
               <MaterialIcons name="water-drop" size={20} color="#3B82F6" />
             </View>
             <View style={styles.cardValuesRow}>
@@ -157,7 +156,7 @@ export function DashboardScreen({ navigation }: any) {
           <View style={[styles.gridCard, { borderTopColor: '#8B5CF6' }]}>
             <TouchableOpacity 
               style={{ position: 'absolute', top: -5, right: -5, zIndex: 10, padding: 15, opacity: 0.8 }}
-              onPress={() => navigation.navigate('IMC')}
+              onPress={() => navigation.navigate('IMCScreen')}
             >
               <MaterialIcons name="arrow-outward" size={18} color="#8B5CF6" />
             </TouchableOpacity>

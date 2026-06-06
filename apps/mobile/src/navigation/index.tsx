@@ -13,6 +13,7 @@ import { ParksScreen } from '../modules/fittrack/screens/ParksScreen';
 import { ExerciseMenuScreen } from '../modules/fittrack/screens/ExerciseMenuScreen';
 import { ExerciseDetailScreen } from '../modules/fittrack/screens/ExerciseDetailScreen';
 import { ExerciseDiaryScreen } from '../modules/fittrack/screens/ExerciseDiaryScreen';
+import { IMCScreen } from '../modules/home/screens/IMCScreen';
 
 // Definir a tipagem básica das rotas principais para ajudar a evitar erros no futuro
 export type RootStackParamList = {
@@ -22,11 +23,12 @@ export type RootStackParamList = {
   AddFood: undefined;
   RecipeSuggestions: undefined;
   NutritionDiary: undefined;
-  ActiveRunScreen: undefined; // Nome exato da nossa nova tela
-  ParksScreen: undefined; // Nome exato da nossa nova tela
-  ExerciseMenuScreen: undefined; // Nome exato da nossa nova tela
-  ExerciseDetailScreen: undefined; // Nome exato da nossa nova tela
-  ExerciseDiaryScreen: undefined; // Nome exato da nossa nova tela
+  ActiveRunScreen: undefined; 
+  ParksScreen: undefined; 
+  ExerciseMenuScreen: undefined; 
+  ExerciseDetailScreen: undefined; 
+  ExerciseDiaryScreen: undefined;
+  IMCScreen: undefined; 
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -51,6 +53,7 @@ export default function Navigation() {
             <Stack.Screen name="ExerciseMenuScreen" component={ExerciseMenuScreen} />
             <Stack.Screen name="ExerciseDetailScreen" component={ExerciseDetailScreen} />
             <Stack.Screen name="ExerciseDiaryScreen" component={ExerciseDiaryScreen} />
+            <Stack.Screen name="IMCScreen" component={IMCScreen} />
           </>
         )}
       </Stack.Navigator>
