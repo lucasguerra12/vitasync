@@ -1,239 +1,243 @@
-import {
-  View, Text, StyleSheet, TextInput,
-  TouchableOpacity, SafeAreaView, ScrollView
-} from 'react-native';
-import { useState } from 'react';
-import { Colors, Typography } from '../../../constants';
-import { calcIMC, getIMCClassification, formatIMC } from '../../../utils';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, ScrollView, Modal, Alert } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import Svg, { Polyline, Circle } from 'react-native-svg';
+import { useWater } from '../../../hooks/useWater';
 
+export function IMCScreen() {
+  const navigation = useNavigation<any>();
+  
+  // --- Água Global ---
+  const { water, waterGoal, addWater } = useWater();
 
-interface Props {
-    onBack: () => void;
-}
+  // --- Estados do IMC ---
+  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
+  const [imc, setImc] = useState<number | null>(null);
 
-export default function IMCScreen({onBack} : Props){
-    const [weight, setWeight]= useState('');
-    const [height , setHeight] = useState('');
-    const [result , setResult] = useState<number | null>(null);
+  // --- Estados do Histórico de Peso ---
+  const [isWeightModalVisible, setWeightModalVisible] = useState(false);
+  const [newWeightInput, setNewWeightInput] = useState('');
+  // Mock inicial do gráfico (últimos 4 pesos)
+  const [weightHistory, setWeightHistory] = useState([80, 79.5, 78, 77.5]);
 
-    const handleCalc = () => {
-        const w = parseFloat(weight);
-        const h = parseFloat(height);
-        if (!w || !h || w <= 0 || h<= 0) {
-            alert('Preencha peso e altura corretamente.');
-            return;
-        }
-        setResult(calcIMC(w,h));
-    };
-    const classification = result ? getIMCClassification(result): null
+  const calculateIMC = () => {
+    const w = parseFloat(weight.replace(',', '.'));
+    const h = parseFloat(height.replace(',', '.')) / 100;
+    if (w > 0 && h > 0) {
+      const result = w / (h * h);
+      setImc(parseFloat(result.toFixed(1)));
+    }
+  };
 
-    return (
+  const getClassification = (value: number) => {
+    if (value < 18.5) return { text: 'Abaixo do peso', color: '#38bdf8' };
+    if (value >= 18.5 && value < 24.9) return { text: 'Peso normal', color: '#10b981' };
+    if (value >= 25 && value < 29.9) return { text: 'Sobrepeso', color: '#f59e0b' };
+    return { text: 'Obesidade', color: '#ef4444' };
+  };
+
+  const handleSaveWeight = () => {
+    const w = parseFloat(newWeightInput.replace(',', '.'));
+    if (w > 0) {
+      // Pega os últimos 3 pesos e adiciona o novo (para o gráfico ter 4 pontos)
+      const updatedHistory = [...weightHistory.slice(1), w];
+      setWeightHistory(updatedHistory);
+      setWeight(w.toString()); // Já preenche no IMC também
+      setWeightModalVisible(false);
+      setNewWeightInput('');
+      Alert.alert("Sucesso", "Novo peso registrado com sucesso!");
+    }
+  };
+
+  // Função simples para mapear o peso para a altura Y do Gráfico SVG
+  const getY = (val: number) => 120 - ((val - 60) * 3); 
+
+  return (
     <SafeAreaView style={styles.container}>
-
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.backIcon}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="#f1f5f9" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Calculadora de IMC</Text>
-        <View style={{ width: 32 }} />
+        <Text style={styles.title}>Corpo & Saúde</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* 1. SEÇÃO DE ÁGUA */}
+        <View style={styles.waterCard}>
+          <View style={styles.waterHeader}>
+            <MaterialIcons name="water-drop" size={24} color="#38bdf8" />
+            <Text style={styles.cardTitle}>Hidratação Diária</Text>
+          </View>
+          
+          <View style={styles.waterContent}>
+            <View style={styles.waterInfo}>
+              <Text style={styles.waterValue}>{water} <Text style={styles.waterGoal}>/ {waterGoal} ml</Text></Text>
+              <View style={styles.waterBarBg}>
+                <View style={[styles.waterBarFill, { width: `${Math.min((water / waterGoal) * 100, 100)}%` }]} />
+              </View>
+            </View>
 
-        {/* Campos */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Peso (kg)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: 75"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="numeric"
-          />
+            <TouchableOpacity style={styles.waterAddButton} onPress={() => addWater(250)}>
+              <MaterialIcons name="add" size={24} color="#fff" />
+              <Text style={styles.waterAddText}>250ml</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-          <Text style={styles.label}>Altura (cm)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex: 175"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={height}
-            onChangeText={setHeight}
-            keyboardType="numeric"
-          />
+        {/* 2. SEÇÃO DE IMC */}
+        <View style={[styles.card, { borderColor: '#8B5CF644' }]}>
+          <View style={styles.waterHeader}>
+            <MaterialIcons name="monitor-weight" size={24} color="#8B5CF6" />
+            <Text style={styles.cardTitle}>Calculadora de IMC</Text>
+          </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleCalc}>
-            <Text style={styles.buttonText}>Calcular IMC</Text>
+          <View style={styles.inputRow}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Peso (kg)</Text>
+              <TextInput 
+                style={styles.input} placeholder="Ex: 75.5" placeholderTextColor="#64748b"
+                keyboardType="decimal-pad" value={weight} onChangeText={setWeight}
+              />
+            </View>
+            <View style={{ width: 16 }} />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Altura (cm)</Text>
+              <TextInput 
+                style={styles.input} placeholder="Ex: 175" placeholderTextColor="#64748b"
+                keyboardType="decimal-pad" value={height} onChangeText={setHeight}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity style={[styles.calcButton, { backgroundColor: '#8B5CF6' }]} onPress={calculateIMC}>
+            <Text style={styles.calcButtonText}>CALCULAR MEU IMC</Text>
+          </TouchableOpacity>
+
+          {imc && (
+            <View style={styles.resultBox}>
+              <Text style={styles.resultValue}>{imc}</Text>
+              <Text style={[styles.resultClass, { color: getClassification(imc).color }]}>
+                {getClassification(imc).text}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* 3. SEÇÃO HISTÓRICO DE PESO */}
+        <View style={styles.card}>
+          <View style={styles.chartHeader}>
+            <Text style={styles.cardTitle}>Evolução de Peso</Text>
+            <Text style={styles.targetText}>Meta: 70kg</Text>
+          </View>
+          
+          <View style={styles.chartContainer}>
+            <Svg height="120" width="100%" viewBox="0 0 300 120">
+              {/* Linha da meta (70kg -> Y = 90 no nosso calculo) */}
+              <Polyline points={`0,${getY(70)} 300,${getY(70)}`} fill="none" stroke="#334155" strokeWidth="2" strokeDasharray="4,4" />
+              {/* Linha do peso dinâmica */}
+              <Polyline 
+                points={`20,${getY(weightHistory[0])} 100,${getY(weightHistory[1])} 180,${getY(weightHistory[2])} 280,${getY(weightHistory[3])}`} 
+                fill="none" stroke="#f97316" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" 
+              />
+              <Circle cx="20" cy={getY(weightHistory[0])} r="6" fill="#f97316" />
+              <Circle cx="100" cy={getY(weightHistory[1])} r="6" fill="#f97316" />
+              <Circle cx="180" cy={getY(weightHistory[2])} r="6" fill="#f97316" />
+              <Circle cx="280" cy={getY(weightHistory[3])} r="6" fill="#f1f5f9" stroke="#f97316" strokeWidth="3" />
+            </Svg>
+          </View>
+          
+          <TouchableOpacity style={styles.addButtonOutlined} onPress={() => setWeightModalVisible(true)}>
+            <Text style={styles.addButtonOutlinedText}>+ REGISTRAR PESO HOJE</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Resultado */}
-        {result && classification && (
-          <View style={[styles.result, { borderColor: classification.color }]}>
-            <Text style={styles.resultLabel}>Seu IMC</Text>
-            <Text style={[styles.resultValue, { color: classification.color }]}>
-              {formatIMC(result)}
-            </Text>
-            <Text style={[styles.resultClass, { color: classification.color }]}>
-              {classification.label}
-            </Text>
-            <Text style={styles.resultAdvice}>{classification.advice}</Text>
-          </View>
-        )}
-
-        {/* Tabela de referência */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tabela de referência</Text>
-          {[
-            { range: 'Abaixo de 18,5', label: 'Abaixo do peso', color: '#3B82F6' },
-            { range: '18,5 — 24,9', label: 'Peso normal', color: '#10B981' },
-            { range: '25,0 — 29,9', label: 'Sobrepeso', color: '#F59E0B' },
-            { range: '30,0 — 34,9', label: 'Obesidade grau I', color: '#F97316' },
-            { range: '35,0 — 39,9', label: 'Obesidade grau II', color: '#EF4444' },
-            { range: 'Acima de 40', label: 'Obesidade grau III', color: '#7C3AED' },
-          ].map(item => (
-            <View key={item.label} style={styles.tableRow}>
-              <View style={[styles.tableColor, { backgroundColor: item.color }]} />
-              <Text style={styles.tableRange}>{item.range}</Text>
-              <Text style={styles.tableLabel}>{item.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* MODAL DE REGISTRAR PESO */}
+      <Modal visible={isWeightModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Registrar Peso Atual</Text>
+            <Text style={styles.modalSubtitle}>Insira seu peso de hoje para atualizar o gráfico.</Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Ex: 74.5"
+              placeholderTextColor="#64748b"
+              keyboardType="decimal-pad"
+              value={newWeightInput}
+              onChangeText={setNewWeightInput}
+              autoFocus
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setWeightModalVisible(false)}>
+                <Text style={styles.modalCancelText}>CANCELAR</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveWeight}>
+                <Text style={styles.modalSaveText}>SALVAR</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.dark.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  backIcon: {
-    fontSize: 24,
-    color: Colors.dark.text,
-  },
-  headerTitle: {
-    fontSize: Typography.sizes.base,
-    fontFamily: Typography.fonts.display,
-    fontWeight: Typography.weights.bold,
-    color: Colors.dark.text,
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: Typography.sizes.base,
-    fontFamily: Typography.fonts.display,
-    fontWeight: Typography.weights.bold,
-    color: Colors.dark.text,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fonts.body,
-    color: Colors.dark.textSecondary,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: Colors.dark.text,
-    fontFamily: Typography.fonts.mono,
-    fontSize: Typography.sizes.base,
-  },
-  button: {
-    backgroundColor: Colors.home,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  buttonText: {
-    color: Colors.white,
-    fontSize: Typography.sizes.base,
-    fontFamily: Typography.fonts.body,
-    fontWeight: Typography.weights.bold,
-  },
-  result: {
-    borderRadius: 16,
-    borderWidth: 2,
-    padding: 24,
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 24,
-    backgroundColor: Colors.dark.surface,
-  },
-  resultLabel: {
-    fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fonts.body,
-    color: Colors.dark.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  resultValue: {
-    fontSize: 56,
-    fontFamily: Typography.fonts.mono,
-    fontWeight: Typography.weights.bold,
-    lineHeight: 64,
-  },
-  resultClass: {
-    fontSize: Typography.sizes.lg,
-    fontFamily: Typography.fonts.display,
-    fontWeight: Typography.weights.bold,
-  },
-  resultAdvice: {
-    fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fonts.body,
-    color: Colors.dark.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.border,
-  },
-  tableColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-  },
-  tableRange: {
-    fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fonts.mono,
-    color: Colors.dark.textSecondary,
-    width: 110,
-  },
-  tableLabel: {
-    fontSize: Typography.sizes.sm,
-    fontFamily: Typography.fonts.body,
-    color: Colors.dark.text,
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#0f172a' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 60 },
+  backButton: { padding: 8, marginLeft: -8 },
+  title: { color: '#f1f5f9', fontSize: 20, fontWeight: 'bold' },
+  content: { padding: 20, paddingBottom: 40 },
+  cardTitle: { color: '#f1f5f9', fontSize: 18, fontWeight: 'bold', marginLeft: 8 },
+  card: { backgroundColor: '#1e293b', padding: 20, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#334155' },
+  
+  // Água
+  waterCard: { backgroundColor: '#1e293b', padding: 20, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#38bdf844' },
+  waterHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  waterContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  waterInfo: { flex: 1, marginRight: 20 },
+  waterValue: { color: '#38bdf8', fontSize: 28, fontWeight: 'bold', marginBottom: 8 },
+  waterGoal: { color: '#64748b', fontSize: 14, fontWeight: 'normal' },
+  waterBarBg: { height: 10, backgroundColor: '#0f172a', borderRadius: 5, overflow: 'hidden' },
+  waterBarFill: { height: '100%', backgroundColor: '#38bdf8', borderRadius: 5 },
+  waterAddButton: { backgroundColor: '#0284c7', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  waterAddText: { color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 4 },
+
+  // IMC
+  inputRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  inputGroup: { flex: 1 },
+  label: { color: '#94a3b8', fontSize: 12, textTransform: 'uppercase', fontWeight: 'bold', marginBottom: 8 },
+  input: { backgroundColor: '#0f172a', color: '#fff', padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: '#334155' },
+  calcButton: { padding: 16, borderRadius: 12, alignItems: 'center' },
+  calcButtonText: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  resultBox: { marginTop: 16, padding: 16, backgroundColor: '#0f172a', borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
+  resultValue: { fontSize: 32, fontWeight: 'bold', color: '#FFF' },
+  resultClass: { fontSize: 16, fontWeight: '600', marginTop: 4 },
+
+  // Gráfico
+  chartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  targetText: { color: '#10b981', fontSize: 12, fontWeight: 'bold' },
+  chartContainer: { height: 120, width: '100%', marginBottom: 20 },
+  addButtonOutlined: { padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f97316' },
+  addButtonOutlinedText: { color: '#f97316', fontWeight: 'bold', fontSize: 14 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', backgroundColor: '#1e293b', borderRadius: 16, padding: 24, borderWidth: 1, borderColor: '#334155' },
+  modalTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
+  modalSubtitle: { color: '#94a3b8', fontSize: 14, marginBottom: 20 },
+  modalInput: { backgroundColor: '#0f172a', color: '#FFF', padding: 16, borderRadius: 12, fontSize: 18, borderWidth: 1, borderColor: '#334155', marginBottom: 24 },
+  modalButtons: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
+  modalCancelBtn: { padding: 12, marginRight: 12 },
+  modalCancelText: { color: '#94a3b8', fontWeight: 'bold', fontSize: 16 },
+  modalSaveBtn: { backgroundColor: '#f97316', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  modalSaveText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
 });

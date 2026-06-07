@@ -8,8 +8,30 @@ import CameraScreen from '../modules/nutrilens/screens/CameraScreen';
 import { NutritionDiaryScreen } from '../modules/nutrilens/screens/NutritionDiaryScreen';
 import { useAppSelector } from '../store/hooks';
 import { RecipeSuggestionsScreen } from '../modules/nutrilens/screens/RecipeSuggestionsScreen';
+import { ActiveRunScreen } from '../modules/fittrack/screens/ActiveRunScreen';
+import { ParksScreen } from '../modules/fittrack/screens/ParksScreen';
+import { ExerciseMenuScreen } from '../modules/fittrack/screens/ExerciseMenuScreen';
+import { ExerciseDetailScreen } from '../modules/fittrack/screens/ExerciseDetailScreen';
+import { ExerciseDiaryScreen } from '../modules/fittrack/screens/ExerciseDiaryScreen';
+import { IMCScreen } from '../modules/home/screens/IMCScreen';
 
-const Stack = createStackNavigator();
+// Definir a tipagem básica das rotas principais para ajudar a evitar erros no futuro
+export type RootStackParamList = {
+  Onboarding: undefined;
+  Main: undefined;
+  Camera: undefined;
+  AddFood: undefined;
+  RecipeSuggestions: undefined;
+  NutritionDiary: undefined;
+  ActiveRunScreen: undefined; 
+  ParksScreen: undefined; 
+  ExerciseMenuScreen: undefined; 
+  ExerciseDetailScreen: undefined; 
+  ExerciseDiaryScreen: undefined;
+  IMCScreen: undefined; 
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function Navigation() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -26,6 +48,12 @@ export default function Navigation() {
             <Stack.Screen name="AddFood" component={AddFoodScreen} />
             <Stack.Screen name="RecipeSuggestions" component={RecipeSuggestionsScreen} />
             <Stack.Screen name="NutritionDiary" component={NutritionDiaryScreen} />
+            <Stack.Screen name="ActiveRunScreen" component={ActiveRunScreen} />
+            <Stack.Screen name="ParksScreen" component={ParksScreen} />
+            <Stack.Screen name="ExerciseMenuScreen" component={ExerciseMenuScreen} />
+            <Stack.Screen name="ExerciseDetailScreen" component={ExerciseDetailScreen} />
+            <Stack.Screen name="ExerciseDiaryScreen" component={ExerciseDiaryScreen} />
+            <Stack.Screen name="IMCScreen" component={IMCScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -5,6 +5,7 @@ import { format, subDays, addDays, isSameDay } from 'date-fns';
 import Svg, { Circle } from 'react-native-svg';
 import { useNutritionHistory } from '../hooks/useNutritionHistory';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { useWater } from '../../../hooks/useWater'; // <-- Importamos aqui!
 
 const MicroCircle = ({ label, percent, color, val }: { label: string, percent: number, color: string, val: string }) => (
   <View style={styles.microCard}>
@@ -31,11 +32,12 @@ export function NutritionDiaryScreen({ navigation }: any) {
   const auth = useAppSelector((state) => state.auth);
   const profile = useAppSelector((state) => state.profile);
   
-  // 🚨 CORREÇÃO DO TYPESCRIPT AQUI TAMBÉM: auth.userId || undefined
   const { groupedMeals, totals, isLoading } = useNutritionHistory(auth.userId || undefined, selectedDate);
   
+  // 👇 LIGAMOS A ÁGUA AQUI 👇
+  const { water, waterGoal, addWater } = useWater();
+
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
-  
   const currentCalories = totals?.calories || 0;
   const kcalLeft = Math.max(0, GOAL_KCAL - currentCalories);
   const circ = 282.7;
@@ -59,8 +61,9 @@ export function NutritionDiaryScreen({ navigation }: any) {
   const dAngle = lAngle + (lKcal / GOAL_KCAL) * 360;
   const sAngle = dAngle + (dKcal / GOAL_KCAL) * 360;
 
+  // 👇 FUNÇÃO REAL AGORA 👇
   const handleAddWater = () => {
-    console.log("💧 Adicionando 250ml de água...");
+    addWater(250); 
   };
 
   return (
@@ -166,14 +169,15 @@ export function NutritionDiaryScreen({ navigation }: any) {
             )}
           </View>
 
+          {/* 👇 ÁREA DE ÁGUA ATUALIZADA 👇 */}
           <View style={styles.waterSection}>
             <View style={styles.waterHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><MaterialIcons name="water-drop" size={20} color="#3b82f6" /><Text style={styles.sectionTitle}>Water Log</Text></View>
-              <Text style={styles.waterTotalText}>{isSameDay(selectedDate, new Date()) ? (profile.currentWaterMl / 1000).toFixed(2) : "0.00"} / 2.0 L</Text>
+              <Text style={styles.waterTotalText}>{isSameDay(selectedDate, new Date()) ? (water / 1000).toFixed(2) : "0.00"} / {(waterGoal / 1000).toFixed(1)} L</Text>
             </View>
             <View style={styles.waterDropsGrid}>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((drop, i) => {
-                const isFilled = isSameDay(selectedDate, new Date()) && profile.currentWaterMl >= drop * 250;
+                const isFilled = isSameDay(selectedDate, new Date()) && water >= drop * 250;
                 return (
                   <TouchableOpacity key={i} onPress={handleAddWater}>
                     <MaterialIcons name="water-drop" size={28} color={isFilled ? "#3b82f6" : "#3e2a1e"} />
@@ -192,7 +196,7 @@ export function NutritionDiaryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#221610' },
   appBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  backBtn: { padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12 },
+  backBtn: { padding: 8, marginTop: 26, backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 12 },
   appBarTitle: { color: '#f8f6f6', fontSize: 16, fontWeight: 'bold' },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
   navBtn: { padding: 8, backgroundColor: 'rgba(236, 91, 19, 0.1)', borderRadius: 20 },
