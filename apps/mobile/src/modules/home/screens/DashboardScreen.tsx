@@ -6,7 +6,7 @@ import { addSteps } from '../../../store/slices/profileSlice';
 import { useDailyNutrition } from '../../nutrilens/hooks/useDailyNutrition';
 import { NotificationService } from '../../../services/NotificationService';
 import { useActivityMetrics } from '../../../hooks/useActivityMetrics';
-import {useWater } from '../../../hooks/useWater';
+import { useWater } from '../../../hooks/useWater'; // <-- Nosso hook de água
 
 export function DashboardScreen({ navigation }: any) {
   const dispatch = useAppDispatch();
@@ -14,16 +14,15 @@ export function DashboardScreen({ navigation }: any) {
   const profile = useAppSelector((state) => state.profile);
   
   const { totals, lastMeal, topNutrient } = useDailyNutrition(auth.userId || undefined);
-
   const { steps, progressPercentage: stepsPercent, dailyGoal: GOAL_STEPS } = useActivityMetrics();
 
   const GOAL_KCAL = profile.dailyCalorieGoal || 2100;
   const progressPercent = Math.min(100, (totals.calories / GOAL_KCAL) * 100) || 0;
-  
   const healthScore = Math.round(progressPercent) > 0 ? Math.round(progressPercent) : 78;
-  const { water } = useWater();
-  const GOAL_WATER = 2000;
-  const waterSquaresFilled = Math.min(5, Math.floor((profile.currentWaterMl / GOAL_WATER) * 5));
+
+  // 👇 LIGAMOS A ÁGUA GLOBAL AQUI 👇
+  const { water, waterGoal } = useWater();
+  const waterSquaresFilled = Math.min(5, Math.floor((water / waterGoal) * 5));
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -58,6 +57,7 @@ export function DashboardScreen({ navigation }: any) {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
+        {/* ... (Hero Card e Date Row continuam iguais) ... */}
         <View style={styles.heroCard}>
           <View style={styles.heroContent}>
             <View>
@@ -132,15 +132,15 @@ export function DashboardScreen({ navigation }: any) {
             </View>
           </View>
 
-          {/* Card 3: Water */}
+          {/* 👇 Card 3: Water (AGORA LIGADO AO useWater) 👇 */}
           <View style={[styles.gridCard, { borderTopColor: '#3B82F6' }]}>
             <View style={styles.cardHeader}>
-              <Text>{water} ml</Text>
+              <Text style={{color: '#94A3B8', fontSize: 12}}>{water} ml</Text>
               <MaterialIcons name="water-drop" size={20} color="#3B82F6" />
             </View>
             <View style={styles.cardValuesRow}>
-              <Text style={styles.cardMainValue}>{(profile.currentWaterMl / 1000).toFixed(2)}</Text>
-              <Text style={styles.cardSubValue}>/ 2.0 L</Text>
+              <Text style={styles.cardMainValue}>{(water / 1000).toFixed(2)}</Text>
+              <Text style={styles.cardSubValue}>/ {(waterGoal / 1000).toFixed(1)} L</Text>
             </View>
             <View style={styles.waterSquaresContainer}>
               {[1, 2, 3, 4, 5].map((square) => (
@@ -174,6 +174,7 @@ export function DashboardScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* ... (O restante da tela continua igual) ... */}
         <View style={styles.timelineSection}>
           <View style={styles.timelineHeader}>
             <Text style={styles.sectionTitle}>Today's log</Text>

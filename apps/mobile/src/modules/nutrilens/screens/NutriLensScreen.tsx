@@ -128,20 +128,7 @@ export function NutriLensScreen({ navigation }: any) {
           )}
         </View>
 
-        <View style={styles.waterSection}>
-          <View style={styles.waterCard}>
-            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-              <MaterialIcons name="water-drop" size={24} color="#3B82F6" />
-              <View style={{marginLeft: 12}}>
-                <Text style={styles.waterTitle}>Hidratação</Text>
-                <Text style={styles.waterDesc}>{(profile.currentWaterMl / 1000).toFixed(2)} L registrados</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.waterBtn} onPress={() => handleAddWater(500)}>
-              <Text style={styles.waterBtnText}>+500ml</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        
 
         <View style={{ height: 100 }} />
       </ScrollView>
